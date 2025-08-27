@@ -1,0 +1,51 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'nl.finnt730'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'lib'
+    }
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    implementation name: 'json-structure-lib'
+    implementation("net.dv8tion:JDA:+") { // replace $version with the latest version
+        // Optionally disable audio natives to reduce jar size by excluding `opus-java` and `tink`
+        // Gradle DSL:
+        // exclude module: 'opus-java' // required for encoding audio into opus, not needed if audio is already provided in opus encoding
+        // exclude module: 'tink' // required for encrypting and decrypting audio
+        // Kotlin DSL:
+        // exclude(module="opus-java") // required for encoding audio into opus, not needed if audio is already provided in opus encoding
+        // exclude(module="tink") // required for encrypting and decrypting audio
+    }
+
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// ShadowJar configuration (optional, but ensures all dependencies are included)
+shadowJar {
+    mergeServiceFiles()
+    // Optionally, you can set the base name, classifier, etc.
+    // archiveBaseName.set('ForgeBot')
+    // archiveClassifier.set('all')
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class': 'nl.finnt730.Main' // Ensure this matches your main class
+        )
+    }
+}

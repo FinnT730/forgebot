@@ -1,0 +1,96 @@
+package nl.finnt730;
+
+import haxe.root.JsonStructureLib;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+
+public class ExecuteCommand extends ListenerAdapter {
+
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+
+        // if the message starts with !register, return
+        if (event.getMessage().getContentRaw().startsWith("!register")) {
+            return;
+        }
+
+        // if the message starts with !alias, return
+        if (event.getMessage().getContentRaw().startsWith("!alias")) {
+            return;
+        }
+
+        // if the message starts with !delete, return
+        if (event.getMessage().getContentRaw().startsWith("!delete")) {
+            return;
+        }
+
+        // if the message starts with !description, return
+        if (event.getMessage().getContentRaw().startsWith("!description")) {
+            return;
+        }
+
+        // Check if the message starts with "!"
+        if (event.getMessage().getContentRaw().startsWith("!")) {
+            String commandName = event.getMessage().getContentRaw().substring(1).split(" ")[0];
+            String[] args = {};
+//            System.out.println(commandName);
+//            if(commandName.length() > 2) {
+//                args = event.getMessage().getContentRaw().substring(commandName.length() + 2).split(" ");
+//            }
+
+            try {
+                var command = JsonStructureLib.createReader().readFile("commands/" + commandName + ".json");
+                if (command != null && command.getString("name", "_null").equals(commandName)) {
+                    String data = command.getString("data", "");
+                    event.getChannel().sendMessage(data).queue();
+                    return;
+                }
+            } catch (Exception e) {
+                // Ignore the exception, it means the file does not exist
+            }
+
+            try {
+                // If not found, check aliases
+                var files = new java.io.File("commands").listFiles((dir, name) -> name.endsWith(".json"));
+                if (files != null) {
+                    for (var file : files) {
+                        var cmd = JsonStructureLib.createReader().readFile(file.getPath());
+                        var aliases = cmd.getStringArray("aliases");
+                        if (aliases.contains(commandName)) {
+                            String data = cmd.getString("data", "");
+                            event.getChannel().sendMessage(data).queue();
+                            return;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore the exception
+            }
+
+            event.getChannel().sendMessage("Command not found!").queue();
+        }
+
+//        var command = JsonStructureLib.createReader().readFile("commands/" + event.getMessage().getContentRaw().substring(1).split(" ")[0] + ".json");
+//        if (command == null) {
+//            event.getChannel().sendMessage("Command not found!").queue();
+//            return;
+//        }
+//
+//        if(command.getString("name", "_null").equals("_null")) {
+//            event.getChannel().sendMessage("Command not found!").queue();
+//            return;
+//        } else {
+//            String data = command.getString("data", "");
+//            String[] args = event.getMessage().getContentRaw().substring(event.getMessage().getContentRaw().indexOf(" ") + 1).split(" ");
+//
+//            if (data.isEmpty()) {
+//                event.getChannel().sendMessage("No data provided for command " + command.getString("name", "null") + "!").queue();
+//                return;
+//            }
+//
+//            // Here you can execute the command with the provided data and args
+//            // For example, you could send a message back to the channel
+//            event.getChannel().sendMessage("Executing command: " + command.getString("name", null) + " with data: " + data + " and args: " + String.join(", ", args)).queue();
+//        }
+    }
+}
