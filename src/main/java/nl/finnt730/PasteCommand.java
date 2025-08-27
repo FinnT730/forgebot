@@ -125,7 +125,7 @@ public final class PasteCommand extends ListenerAdapter {
                      String pasteUrl = extractUrlFromResponse(responseStr);
                      String rawUrl = extractRawUrlFromResponse(responseStr);
                      if (pasteUrl != null && rawUrl != null) {
-                         String sentContent = String.format("[PASTE URL](<%s>) | [RAW URL](<%s>)",
+                         String sentContent = String.format("[Paste](<%s>) | [Raw](<%s>)",
                                  pasteUrl.replace("\\", ""), rawUrl.replace("\\", ""));
                          channel.sendMessage(sentContent).queue();
                      } else {
