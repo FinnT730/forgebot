@@ -73,7 +73,7 @@ public final class PasteCommand extends ListenerAdapter {
                                     content.append(line).append("\n");
                                 }
                                 // Create paste with attachment content
-                                createPaste(content.toString(), event.getChannel(), event.getUser());
+                                createPaste(content.toString(), event.getChannel(), message);
                             }
                         } catch (Exception e) {
                             event.getChannel().sendMessage("❌ Error reading attachment: " + e.getMessage()).queue();
@@ -81,14 +81,14 @@ public final class PasteCommand extends ListenerAdapter {
                     } else {
                         // Use message content if no attachments
                         String content = message.getContentRaw();
-                        createPaste(content, event.getChannel(), event.getUser());
+                        createPaste(content, event.getChannel(), message);
                     }
                 }
             });
         }
     }
 
-    private void createPaste(String content, net.dv8tion.jda.api.entities.channel.middleman.MessageChannel channel, User user) {
+    private static void createPaste(String content, net.dv8tion.jda.api.entities.channel.middleman.MessageChannel channel, Message message) {
         CompletableFuture.runAsync(() -> {
             try {
                 // Prepare the POST data
@@ -126,16 +126,28 @@ public final class PasteCommand extends ListenerAdapter {
                      if (pasteUrl != null && rawUrl != null) {
                          String sentContent = String.format("[PASTE URL](<%s>) | [RAW URL](<%s>)",
                                  pasteUrl.replace("\\", ""), rawUrl.replace("\\", ""));
-                         channel.sendMessage(sentContent).queue();
+                         channel.sendMessage(sentContent)
+                                 .setMessageReference(message)
+                                 .mentionRepliedUser(false)
+                                 .queue();
                      } else {
-                         channel.sendMessage("❌ Failed to create paste: Could not extract URLs from response.").queue();
+                         channel.sendMessage("❌ Failed to create paste: Could not extract URLs from response.")
+                                 .setMessageReference(message)
+                                 .mentionRepliedUser(false)
+                                 .queue();
                      }
                  } else {
-                     channel.sendMessage("❌ Failed to create paste: " + responseStr).queue();
+                     channel.sendMessage("❌ Failed to create paste: " + responseStr)
+                             .setMessageReference(message)
+                             .mentionRepliedUser(false)
+                             .queue();
                  }
 
             } catch (Exception e) {
-                channel.sendMessage("❌ Error creating paste: " + e.getMessage()).queue();
+                channel.sendMessage("❌ Error creating paste: " + e.getMessage())
+                        .setMessageReference(message)
+                        .mentionRepliedUser(false)
+                        .queue();
                 e.printStackTrace();
             }
         });
