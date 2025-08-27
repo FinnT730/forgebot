@@ -24,6 +24,7 @@ public final class PasteCommand extends ListenerAdapter {
 
     private static final String MCLO_API_URL = "https://api.mclo.gs/1/log";
     private static final String NOTEBOOK_EMOJI = "📓";
+    private static final Emoji NOTEBOOK_EMOJI_OBJ = Emoji.fromUnicode(NOTEBOOK_EMOJI);
     private static final int MAX_MESSAGE_LENGTH = 700;
 
     @Override
@@ -35,11 +36,10 @@ public final class PasteCommand extends ListenerAdapter {
 
         Message message = event.getMessage();
         String content = message.getContentRaw();
-        
-        // Check if message is longer than 300 characters
+      
         if (content.length() > MAX_MESSAGE_LENGTH || !message.getAttachments().isEmpty()) {
             // Add notebook emoji to the message
-            message.addReaction(Emoji.fromUnicode(NOTEBOOK_EMOJI)).queue();
+            message.addReaction(NOTEBOOK_EMOJI_OBJ).queue();
         }
     }
 
@@ -140,7 +140,7 @@ public final class PasteCommand extends ListenerAdapter {
         });
     }
 
-         private String extractUrlFromResponse(String response) {
+     private static String extractUrlFromResponse(String response) {
          // Simple JSON parsing to extract the URL
          // Looking for "url":"https://mclo.gs/..."
          int urlIndex = response.indexOf("\"url\":\"");
@@ -154,7 +154,7 @@ public final class PasteCommand extends ListenerAdapter {
          return null;
      }
 
-     private String extractRawUrlFromResponse(String response) {
+     private static String extractRawUrlFromResponse(String response) {
          // Simple JSON parsing to extract the raw URL
          // Looking for "raw":"https://api.mclo.gs/1/raw/..."
          int rawIndex = response.indexOf("\"raw\":\"");

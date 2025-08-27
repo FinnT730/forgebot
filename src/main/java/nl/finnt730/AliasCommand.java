@@ -9,8 +9,9 @@ public final class AliasCommand extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        if(event.getMessage().getContentRaw().startsWith("!alias")) {
-            String[] parts = event.getMessage().getContentRaw().split(" ");
+        String rawMessage = event.getMessage().getContentRaw();
+        if (rawMessage.startsWith("!alias")) {
+            String[] parts = rawMessage.split(" ");
             if(parts.length < 3) {
                 event.getChannel().sendMessage("Usage: !alias <existing_command> <new_alias>").queue();
                 return;

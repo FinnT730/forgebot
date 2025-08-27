@@ -6,13 +6,12 @@ import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-
 public final class RegisterNewCommand extends ListenerAdapter  {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         if(event.getMessage().getContentRaw().startsWith("!register")) {
-            String command = event.getMessage().getContentRaw().substring(1).split(" ")[0];
+            String command = event.getMessage().getContentRaw().substring(1).split(" ", 2)[0];
             String messageContent = event.getMessage().getContentRaw().substring(command.length() + 2);
 
             System.out.println(command);
@@ -20,7 +19,7 @@ public final class RegisterNewCommand extends ListenerAdapter  {
 
             if (command.equalsIgnoreCase("register")) {
                 // Parse the message content properly to handle quoted strings
-                String[] parsedArgs = parseQuotedString(messageContent);
+                String[] parsedArgs = Global.parseQuotedString(messageContent);
                 
                 if (parsedArgs.length < 2) {
                     event.getChannel().sendMessage("Usage: !register <name> \"<data>\" [description] [aliases]").queue();
@@ -64,60 +63,12 @@ public final class RegisterNewCommand extends ListenerAdapter  {
 //                        .addStringField("options", optionsString)
                         .build();
 
-                JsonStructureLib.writeJsonFile(commandObject, "commands/" + name + ".json", Global.commandStructure);
+                JsonStructureLib.writeJsonFile(commandObject, "commands/" + name + ".json", Global.COMMAND_STRUCTURE);
                 event.getChannel().sendMessage("command has been registered!").queue();
 
             } else {
                 event.getChannel().sendMessage("Unknown command: " + command).queue();
             }
         }
-    }
-    
-    /**
-     * Parse a string that may contain quoted arguments, handling spaces within quotes properly
-     * @param input The input string to parse
-     * @return Array of parsed arguments
-     */
-    private String[] parseQuotedString(String input) {
-        java.util.List<String> result = new java.util.ArrayList<>();
-        StringBuilder currentArg = new StringBuilder();
-        boolean inQuotes = false;
-        boolean escapeNext = false;
-        
-        for (int i = 0; i < input.length(); i++) {
-            char c = input.charAt(i);
-            
-            if (escapeNext) {
-                currentArg.append(c);
-                escapeNext = false;
-                continue;
-            }
-            
-            if (c == '\\') {
-                escapeNext = true;
-                continue;
-            }
-            
-            if (c == '"') {
-                inQuotes = !inQuotes;
-                continue;
-            }
-            
-            if (c == ' ' && !inQuotes) {
-                if (!currentArg.isEmpty()) {
-                    result.add(currentArg.toString().trim());
-                    currentArg.setLength(0);
-                }
-            } else {
-                currentArg.append(c);
-            }
-        }
-        
-        // Add the last argument if there is one
-        if (!currentArg.isEmpty()) {
-            result.add(currentArg.toString().trim());
-        }
-        
-        return result.toArray(new String[0]);
     }
 }
