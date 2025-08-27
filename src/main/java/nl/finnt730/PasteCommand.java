@@ -40,7 +40,7 @@ public final class PasteCommand extends ListenerAdapter {
       
         if (content.length() > MAX_MESSAGE_LENGTH || !attachments.isEmpty()) {
             // Add notebook emoji to the message
-            if (attachments.stream().noneMatch(Message.Attachment::isImage)) {
+            if (attachments.stream().noneMatch(it -> it.isImage() || it.isVideo())) {
                 message.addReaction(NOTEBOOK_EMOJI_OBJ).queue();
             }
         }
@@ -60,14 +60,15 @@ public final class PasteCommand extends ListenerAdapter {
                 // Check if the message has already been processed
                 if (message.getReactions().stream().anyMatch(MessageReaction::isSelf)) {
                     message.clearReactions().queue();
-                    if (!message.getAttachments().isEmpty() && message.getAttachments().stream().noneMatch(Message.Attachment::isImage)) {
+                    var attachments = message.getAttachments();
+                    if (!attachments.isEmpty() && attachments.stream().noneMatch(it -> it.isImage() || it.isVideo())) {
                         try {
-                            URL url = new URL(message.getAttachments().getFirst().getUrl());
+                            URL url = new URL(attachments.getFirst().getUrl());
                             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                             connection.setRequestMethod("GET");
 
                             try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                                StringBuilder content = new StringBuilder();
+                                StringBuilder content = new StringBuilder(10_000);
                                 String line;
                                 while ((line = reader.readLine()) != null) {
                                     content.append(line).append("\n");
@@ -117,14 +118,14 @@ public final class PasteCommand extends ListenerAdapter {
                     }
                 }
 
-                                 // Parse the response (simple JSON parsing for the URL)
+                 // Parse the response (simple JSON parsing for the URL)
                  String responseStr = response.toString();
                  if (responseStr.contains("\"success\":true")) {
                      // Extract the URLs from the response
                      String pasteUrl = extractUrlFromResponse(responseStr);
                      String rawUrl = extractRawUrlFromResponse(responseStr);
                      if (pasteUrl != null && rawUrl != null) {
-                         String sentContent = String.format("[PASTE URL](<%s>) | [RAW URL](<%s>)",
+                         String sentContent = "[Paste](<%s>) | [Raw](<%s>)".formatted(
                                  pasteUrl.replace("\\", ""), rawUrl.replace("\\", ""));
                          channel.sendMessage(sentContent)
                                  .setMessageReference(message)
