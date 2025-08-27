@@ -40,7 +40,7 @@ public final class PasteCommand extends ListenerAdapter {
       
         if (content.length() > MAX_MESSAGE_LENGTH || !attachments.isEmpty()) {
             // Add notebook emoji to the message
-            if (attachments.stream().noneMatch(Message.Attachment::isImage)) {
+            if (attachments.stream().noneMatch(it -> it.isImage() || it.isVideo())) {
                 message.addReaction(NOTEBOOK_EMOJI_OBJ).queue();
             }
         }
