@@ -1,6 +1,7 @@
 package nl.finnt730;
 
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -24,7 +25,6 @@ public final class PasteCommand extends ListenerAdapter {
     private static final String MCLO_API_URL = "https://api.mclo.gs/1/log";
     private static final String NOTEBOOK_EMOJI = "📓";
     private static final int MAX_MESSAGE_LENGTH = 700;
-    private final Set<String> processedMessages = new HashSet<>();
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
@@ -37,7 +37,7 @@ public final class PasteCommand extends ListenerAdapter {
         String content = message.getContentRaw();
         
         // Check if message is longer than 300 characters
-        if (content.length() > MAX_MESSAGE_LENGTH) {
+        if (content.length() > MAX_MESSAGE_LENGTH || !message.getAttachments().isEmpty()) {
             // Add notebook emoji to the message
             message.addReaction(Emoji.fromUnicode(NOTEBOOK_EMOJI)).queue();
         }
@@ -55,8 +55,8 @@ public final class PasteCommand extends ListenerAdapter {
             // Get the message that was reacted to
             event.getChannel().retrieveMessageById(event.getMessageId()).queue(message -> {
                 // Check if the message has already been processed
-                if (processedMessages.contains(message.getId())) {
-                    return;
+                if (message.getReactions().stream().anyMatch(MessageReaction::isSelf)) {
+                    message.clearReactions().queue();
                 }
 
                 // Check for attachments
@@ -83,9 +83,6 @@ public final class PasteCommand extends ListenerAdapter {
                     String content = message.getContentRaw();
                     createPaste(content, event.getChannel(), event.getUser());
                 }
-
-                // Mark the message as processed
-                processedMessages.add(message.getId());
             });
         }
     }
@@ -126,10 +123,9 @@ public final class PasteCommand extends ListenerAdapter {
                      String pasteUrl = extractUrlFromResponse(responseStr);
                      String rawUrl = extractRawUrlFromResponse(responseStr);
                      if (pasteUrl != null && rawUrl != null) {
-                         channel.sendMessage("📓 **Paste created for " + user.getAsMention() + "!**\n" +
-                                 "**Paste URL:** " + pasteUrl + "\n" +
-                                 "**Raw URL:** " + rawUrl + "\n" +
-                                 "*This paste will be automatically deleted 90 days after the last view.*").queue();
+                         String sentContent = String.format("[PASTE URL](<%s>) | [RAW URL](<%s>)",
+                                 pasteUrl.replace("\\", ""), rawUrl.replace("\\", ""));
+                         channel.sendMessage(sentContent).queue();
                      } else {
                          channel.sendMessage("❌ Failed to create paste: Could not extract URLs from response.").queue();
                      }
