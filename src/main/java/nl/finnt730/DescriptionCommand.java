@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 public final class DescriptionCommand extends ListenerAdapter {
@@ -64,7 +65,7 @@ public final class DescriptionCommand extends ListenerAdapter {
                             .build();
 
                     // Write the updated command back to file
-                    JsonStructureLib.writeJsonFile(updatedCommandObject, "commands/" + commandName + ".json", Global.commandStructure);
+                    JsonStructureLib.writeJsonFile(updatedCommandObject, "commands/" + commandName + ".json", Global.COMMAND_STRUCTURE);
 
                     event.getChannel().sendMessage("✅ Successfully updated description for command `" + commandName + "`!\n" +
                             "**Old description:** " + oldDescription + "\n" +
@@ -84,8 +85,8 @@ public final class DescriptionCommand extends ListenerAdapter {
      * @param input The input string to parse
      * @return Array of parsed arguments
      */
-    private String[] parseQuotedString(String input) {
         java.util.List<String> result = new java.util.ArrayList<>();
+    private static String[] parseQuotedString(String input) {
         StringBuilder currentArg = new StringBuilder();
         boolean inQuotes = false;
         boolean escapeNext = false;

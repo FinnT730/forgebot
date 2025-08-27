@@ -4,8 +4,9 @@ import com.jsonstructure.JsonStructure;
 import haxe.root.JsonStructureLib;
 
 public final class Global {
+    private Global() {}
 
-    public static JsonStructure commandStructure = JsonStructureLib.createStructure()
+    public static final JsonStructure COMMAND_STRUCTURE = JsonStructureLib.createStructure()
             .addStringField("name")
             .addOptionalStringField("description")
             .addStringField("data")

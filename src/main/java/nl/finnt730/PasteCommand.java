@@ -144,7 +144,7 @@ public final class PasteCommand extends ListenerAdapter {
         });
     }
 
-         private String extractUrlFromResponse(String response) {
+     private static String extractUrlFromResponse(String response) {
          // Simple JSON parsing to extract the URL
          // Looking for "url":"https://mclo.gs/..."
          int urlIndex = response.indexOf("\"url\":\"");
@@ -158,7 +158,7 @@ public final class PasteCommand extends ListenerAdapter {
          return null;
      }
 
-     private String extractRawUrlFromResponse(String response) {
+     private static String extractRawUrlFromResponse(String response) {
          // Simple JSON parsing to extract the raw URL
          // Looking for "raw":"https://api.mclo.gs/1/raw/..."
          int rawIndex = response.indexOf("\"raw\":\"");

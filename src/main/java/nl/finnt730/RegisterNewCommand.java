@@ -64,7 +64,7 @@ public final class RegisterNewCommand extends ListenerAdapter  {
 //                        .addStringField("options", optionsString)
                         .build();
 
-                JsonStructureLib.writeJsonFile(commandObject, "commands/" + name + ".json", Global.commandStructure);
+                JsonStructureLib.writeJsonFile(commandObject, "commands/" + name + ".json", Global.COMMAND_STRUCTURE);
                 event.getChannel().sendMessage("command has been registered!").queue();
 
             } else {
@@ -78,7 +78,7 @@ public final class RegisterNewCommand extends ListenerAdapter  {
      * @param input The input string to parse
      * @return Array of parsed arguments
      */
-    private String[] parseQuotedString(String input) {
+    private static String[] parseQuotedString(String input) {
         java.util.List<String> result = new java.util.ArrayList<>();
         StringBuilder currentArg = new StringBuilder();
         boolean inQuotes = false;
