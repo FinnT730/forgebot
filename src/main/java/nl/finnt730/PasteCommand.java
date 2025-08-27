@@ -36,10 +36,13 @@ public final class PasteCommand extends ListenerAdapter {
 
         Message message = event.getMessage();
         String content = message.getContentRaw();
+        var attachments = message.getAttachments();
       
-        if (content.length() > MAX_MESSAGE_LENGTH || !message.getAttachments().isEmpty()) {
+        if (content.length() > MAX_MESSAGE_LENGTH || !attachments.isEmpty()) {
             // Add notebook emoji to the message
-            message.addReaction(NOTEBOOK_EMOJI_OBJ).queue();
+            if (attachments.stream().noneMatch(Message.Attachment::isImage)) {
+                message.addReaction(NOTEBOOK_EMOJI_OBJ).queue();
+            }
         }
     }
 
@@ -57,31 +60,29 @@ public final class PasteCommand extends ListenerAdapter {
                 // Check if the message has already been processed
                 if (message.getReactions().stream().anyMatch(MessageReaction::isSelf)) {
                     message.clearReactions().queue();
-                }
+                    if (!message.getAttachments().isEmpty() && message.getAttachments().stream().noneMatch(Message.Attachment::isImage)) {
+                        try {
+                            URL url = new URL(message.getAttachments().getFirst().getUrl());
+                            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                            connection.setRequestMethod("GET");
 
-                // Check for attachments
-                if (!message.getAttachments().isEmpty()) {
-                    try {
-                        URL url = new URL(message.getAttachments().getFirst().getUrl());
-                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                        connection.setRequestMethod("GET");
-
-                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                            StringBuilder content = new StringBuilder();
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                content.append(line).append("\n");
+                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                                StringBuilder content = new StringBuilder();
+                                String line;
+                                while ((line = reader.readLine()) != null) {
+                                    content.append(line).append("\n");
+                                }
+                                // Create paste with attachment content
+                                createPaste(content.toString(), event.getChannel(), event.getUser());
                             }
-                            // Create paste with attachment content
-                            createPaste(content.toString(), event.getChannel(), event.getUser());
+                        } catch (Exception e) {
+                            event.getChannel().sendMessage("❌ Error reading attachment: " + e.getMessage()).queue();
                         }
-                    } catch (Exception e) {
-                        event.getChannel().sendMessage("❌ Error reading attachment: " + e.getMessage()).queue();
+                    } else {
+                        // Use message content if no attachments
+                        String content = message.getContentRaw();
+                        createPaste(content, event.getChannel(), event.getUser());
                     }
-                } else {
-                    // Use message content if no attachments
-                    String content = message.getContentRaw();
-                    createPaste(content, event.getChannel(), event.getUser());
                 }
             });
         }
