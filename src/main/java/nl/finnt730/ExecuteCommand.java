@@ -14,42 +14,43 @@ public final class ExecuteCommand extends ListenerAdapter {
         String rawMessage = event.getMessage().getContentRaw();
 
         // Check if the message starts with "!"
-        if (rawMessage.charAt(0) == '!') {
-            String commandName = rawMessage.substring(1).split(" ", 2)[0];
-            if (RESERVED_COMMANDS.contains(commandName))
+        if (rawMessage.isEmpty() || rawMessage.charAt(0) != '!')
+            return;
+
+        String commandName = rawMessage.substring(1).split(" ", 2)[0];
+        if (RESERVED_COMMANDS.contains(commandName))
+            return;
+
+        try {
+            var command = JsonStructureLib.createReader().readFile("commands/" + commandName + ".json");
+            if (command != null && command.getString("name", "_null").equals(commandName)) {
+                String data = command.getString("data", "");
+                event.getChannel().sendMessage(data).queue();
                 return;
-
-            try {
-                var command = JsonStructureLib.createReader().readFile("commands/" + commandName + ".json");
-                if (command != null && command.getString("name", "_null").equals(commandName)) {
-                    String data = command.getString("data", "");
-                    event.getChannel().sendMessage(data).queue();
-                    return;
-                }
-            } catch (Exception e) {
-                // Ignore the exception, it means the file does not exist
             }
+        } catch (Exception e) {
+            // Ignore the exception, it means the file does not exist
+        }
 
-            try {
-                // If not found, check aliases
-                var files = new java.io.File("commands").listFiles((dir, name) -> name.endsWith(".json"));
-                if (files != null) {
-                    for (var file : files) {
-                        var cmd = JsonStructureLib.createReader().readFile(file.getPath());
-                        var aliases = cmd.getStringArray("aliases");
-                        if (aliases.contains(commandName)) {
-                            String data = cmd.getString("data", "");
-                            event.getChannel().sendMessage(data).queue();
-                            return;
-                        }
+        try {
+            // If not found, check aliases
+            var files = new java.io.File("commands").listFiles((dir, name) -> name.endsWith(".json"));
+            if (files != null) {
+                for (var file : files) {
+                    var cmd = JsonStructureLib.createReader().readFile(file.getPath());
+                    var aliases = cmd.getStringArray("aliases");
+                    if (aliases.contains(commandName)) {
+                        String data = cmd.getString("data", "");
+                        event.getChannel().sendMessage(data).queue();
+                        return;
                     }
                 }
-            } catch (Exception e) {
-                // Ignore the exception
             }
-
-            event.getChannel().sendMessage("Command not found!").queue();
+        } catch (Exception e) {
+            // Ignore the exception
         }
+
+        event.getChannel().sendMessage("Command not found!").queue();
 
 //        var command = JsonStructureLib.createReader().readFile("commands/" + event.getMessage().getContentRaw().substring(1).split(" ")[0] + ".json");
 //        if (command == null) {
