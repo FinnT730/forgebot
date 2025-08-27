@@ -13,7 +13,7 @@ public final class DeleteCommand extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         if (event.getMessage().getContentRaw().startsWith("!delete")) {
-            String command = event.getMessage().getContentRaw().substring(1).split(" ")[0];
+            String command = event.getMessage().getContentRaw().substring(1).split(" ", 2)[0];
             String messageContent = event.getMessage().getContentRaw().substring(command.length() + 2);
 
             if (command.equalsIgnoreCase("delete")) {

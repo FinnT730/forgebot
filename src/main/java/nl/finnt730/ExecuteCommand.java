@@ -31,8 +31,8 @@ public final class ExecuteCommand extends ListenerAdapter {
 
         // Check if the message starts with "!"
         if (event.getMessage().getContentRaw().startsWith("!")) {
-            String commandName = event.getMessage().getContentRaw().substring(1).split(" ")[0];
-            String[] args = {};
+            String commandName = event.getMessage().getContentRaw().substring(1).split(" ", 2)[0];
+//            String[] args = {};
 //            System.out.println(commandName);
 //            if(commandName.length() > 2) {
 //                args = event.getMessage().getContentRaw().substring(commandName.length() + 2).split(" ");
