@@ -118,14 +118,14 @@ public final class PasteCommand extends ListenerAdapter {
                     }
                 }
 
-                                 // Parse the response (simple JSON parsing for the URL)
+                 // Parse the response (simple JSON parsing for the URL)
                  String responseStr = response.toString();
                  if (responseStr.contains("\"success\":true")) {
                      // Extract the URLs from the response
                      String pasteUrl = extractUrlFromResponse(responseStr);
                      String rawUrl = extractRawUrlFromResponse(responseStr);
                      if (pasteUrl != null && rawUrl != null) {
-                         String sentContent = String.format("[Paste](<%s>) | [Raw](<%s>)",
+                         String sentContent = "[Paste](<%s>) | [Raw](<%s>)".formatted(
                                  pasteUrl.replace("\\", ""), rawUrl.replace("\\", ""));
                          channel.sendMessage(sentContent).queue();
                      } else {
