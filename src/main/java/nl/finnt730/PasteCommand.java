@@ -60,9 +60,10 @@ public final class PasteCommand extends ListenerAdapter {
                 // Check if the message has already been processed
                 if (message.getReactions().stream().anyMatch(MessageReaction::isSelf)) {
                     message.clearReactions().queue();
-                    if (!message.getAttachments().isEmpty() && message.getAttachments().stream().noneMatch(Message.Attachment::isImage)) {
+                    var attachments = message.getAttachments();
+                    if (!attachments.isEmpty() && attachments.stream().noneMatch(it -> it.isImage() || it.isVideo())) {
                         try {
-                            URL url = new URL(message.getAttachments().getFirst().getUrl());
+                            URL url = new URL(attachments.getFirst().getUrl());
                             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                             connection.setRequestMethod("GET");
 
