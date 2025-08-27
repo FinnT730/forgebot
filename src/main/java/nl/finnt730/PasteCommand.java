@@ -23,6 +23,7 @@ public final class PasteCommand extends ListenerAdapter {
 
     private static final String MCLO_API_URL = "https://api.mclo.gs/1/log";
     private static final String NOTEBOOK_EMOJI = "📓";
+    private static final Emoji NOTEBOOK_EMOJI_OBJ = Emoji.fromUnicode(NOTEBOOK_EMOJI);
     private static final int MAX_MESSAGE_LENGTH = 700;
     private final Set<String> processedMessages = new HashSet<>();
 
@@ -35,11 +36,10 @@ public final class PasteCommand extends ListenerAdapter {
 
         Message message = event.getMessage();
         String content = message.getContentRaw();
-        
-        // Check if message is longer than 300 characters
+
         if (content.length() > MAX_MESSAGE_LENGTH) {
             // Add notebook emoji to the message
-            message.addReaction(Emoji.fromUnicode(NOTEBOOK_EMOJI)).queue();
+            message.addReaction(NOTEBOOK_EMOJI_OBJ).queue();
         }
     }
 
