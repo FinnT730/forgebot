@@ -12,9 +12,10 @@ public final class DescriptionCommand extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (event.getMessage().getContentRaw().startsWith("!description")) {
-            String command = event.getMessage().getContentRaw().substring(1).split(" ", 2)[0];
-            String messageContent = event.getMessage().getContentRaw().substring(command.length() + 2);
+        String rawMessage = event.getMessage().getContentRaw();
+        if (rawMessage.startsWith("!description")) {
+            String command = rawMessage.substring(1).split(" ", 2)[0];
+            String messageContent = rawMessage.substring(command.length() + 2);
 
             if (command.equalsIgnoreCase("description")) {
                 // Check if user has admin or manage server permissions
@@ -111,7 +112,7 @@ public final class DescriptionCommand extends ListenerAdapter {
             }
             
             if (c == ' ' && !inQuotes) {
-                if (currentArg.length() > 0) {
+                if (!currentArg.isEmpty()) {
                     result.add(currentArg.toString().trim());
                     currentArg.setLength(0);
                 }
@@ -121,7 +122,7 @@ public final class DescriptionCommand extends ListenerAdapter {
         }
         
         // Add the last argument if there is one
-        if (currentArg.length() > 0) {
+        if (!currentArg.isEmpty()) {
             result.add(currentArg.toString().trim());
         }
         

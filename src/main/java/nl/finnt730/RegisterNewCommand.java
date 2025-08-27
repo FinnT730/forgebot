@@ -6,6 +6,8 @@ import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
+import java.util.ArrayList;
+
 
 public final class RegisterNewCommand extends ListenerAdapter  {
 
@@ -79,7 +81,7 @@ public final class RegisterNewCommand extends ListenerAdapter  {
      * @return Array of parsed arguments
      */
     private static String[] parseQuotedString(String input) {
-        java.util.List<String> result = new java.util.ArrayList<>();
+        var result = new ArrayList<String>();
         StringBuilder currentArg = new StringBuilder();
         boolean inQuotes = false;
         boolean escapeNext = false;

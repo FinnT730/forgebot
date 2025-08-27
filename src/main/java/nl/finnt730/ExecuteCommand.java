@@ -8,24 +8,25 @@ public final class ExecuteCommand extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
+        String rawMessage = event.getMessage().getContentRaw();
 
         // if the message starts with !register, return
-        if (event.getMessage().getContentRaw().startsWith("!register")) {
+        if (rawMessage.startsWith("!register")) {
             return;
         }
 
         // if the message starts with !alias, return
-        if (event.getMessage().getContentRaw().startsWith("!alias")) {
+        if (rawMessage.startsWith("!alias")) {
             return;
         }
 
         // if the message starts with !delete, return
-        if (event.getMessage().getContentRaw().startsWith("!delete")) {
+        if (rawMessage.startsWith("!delete")) {
             return;
         }
 
         // if the message starts with !description, return
-        if (event.getMessage().getContentRaw().startsWith("!description")) {
+        if (rawMessage.startsWith("!description")) {
             return;
         }
 
