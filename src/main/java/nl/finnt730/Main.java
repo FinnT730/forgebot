@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Random;
 
-public class Main {
+public final class Main {
     public static void main(String[] args) {
         try {
             DynamicJson json = JsonStructureLib.createReader().readFile("env.json");

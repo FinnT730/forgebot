@@ -1,15 +1,13 @@
 package nl.finnt730;
 
 import com.jsonstructure.DynamicJson;
-import com.jsonstructure.JsonReader;
 import haxe.root.Array;
 import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-import java.util.Arrays;
 
-public class RegisterNewCommand extends ListenerAdapter  {
+public final class RegisterNewCommand extends ListenerAdapter  {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {

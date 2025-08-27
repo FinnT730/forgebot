@@ -19,7 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-public class PasteCommand extends ListenerAdapter {
+public final class PasteCommand extends ListenerAdapter {
 
     private static final String MCLO_API_URL = "https://api.mclo.gs/1/log";
     private static final String NOTEBOOK_EMOJI = "📓";

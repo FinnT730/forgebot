@@ -3,7 +3,7 @@ package nl.finnt730;
 import com.jsonstructure.JsonStructure;
 import haxe.root.JsonStructureLib;
 
-public class Global {
+public final class Global {
 
     public static JsonStructure commandStructure = JsonStructureLib.createStructure()
             .addStringField("name")
