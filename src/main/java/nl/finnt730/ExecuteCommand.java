@@ -4,40 +4,20 @@ import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
+import java.util.Set;
+
 public final class ExecuteCommand extends ListenerAdapter {
+    private static final Set<String> RESERVED_COMMANDS = Set.of("register", "alias", "delete", "description");
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         String rawMessage = event.getMessage().getContentRaw();
 
-        // if the message starts with !register, return
-        if (rawMessage.startsWith("!register")) {
-            return;
-        }
-
-        // if the message starts with !alias, return
-        if (rawMessage.startsWith("!alias")) {
-            return;
-        }
-
-        // if the message starts with !delete, return
-        if (rawMessage.startsWith("!delete")) {
-            return;
-        }
-
-        // if the message starts with !description, return
-        if (rawMessage.startsWith("!description")) {
-            return;
-        }
-
         // Check if the message starts with "!"
-        if (event.getMessage().getContentRaw().startsWith("!")) {
-            String commandName = event.getMessage().getContentRaw().substring(1).split(" ", 2)[0];
-//            String[] args = {};
-//            System.out.println(commandName);
-//            if(commandName.length() > 2) {
-//                args = event.getMessage().getContentRaw().substring(commandName.length() + 2).split(" ");
-//            }
+        if (rawMessage.charAt(0) == '!') {
+            String commandName = rawMessage.substring(1).split(" ", 2)[0];
+            if (RESERVED_COMMANDS.contains(commandName))
+                return;
 
             try {
                 var command = JsonStructureLib.createReader().readFile("commands/" + commandName + ".json");
