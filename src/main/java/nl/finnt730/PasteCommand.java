@@ -68,7 +68,7 @@ public final class PasteCommand extends ListenerAdapter {
                             connection.setRequestMethod("GET");
 
                             try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                                StringBuilder content = new StringBuilder();
+                                StringBuilder content = new StringBuilder(10_000);
                                 String line;
                                 while ((line = reader.readLine()) != null) {
                                     content.append(line).append("\n");
