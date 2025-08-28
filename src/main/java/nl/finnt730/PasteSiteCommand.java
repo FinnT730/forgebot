@@ -34,7 +34,7 @@ public final class PasteSiteCommand extends ListenerAdapter {
             
             // Validate the paste site
             if (!isValidPasteSite(newPasteSite)) {
-                event.getChannel().sendMessage("Invalid paste site! Valid options are: mclogs, pastesdev, securelogger, mmd").queue();
+                event.getChannel().sendMessage("Invalid paste site! Valid options are: mclogs, gnomebot, pastesdev, securelogger, mmd").queue();
                 return;
             }
             
@@ -50,6 +50,7 @@ public final class PasteSiteCommand extends ListenerAdapter {
     private boolean isValidPasteSite(String site) {
         return "mclogs".equals(site) || 
                "pastesdev".equals(site) || 
+               "gnomebot".equals(site) || 
                "securelogger".equals(site) || 
                "mmd".equals(site);
     }
@@ -57,6 +58,7 @@ public final class PasteSiteCommand extends ListenerAdapter {
     private String getSiteName(String site) {
         switch (site) {
             case "mclogs": return "MCLogs";
+            case "gnomebot": return "gnomebot.dev";
             case "pastesdev": return "Pastes.dev";
             case "securelogger": return "SecureLogger";
             case "mmd": return "MMD Paste";
