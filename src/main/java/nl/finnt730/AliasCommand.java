@@ -1,6 +1,5 @@
 package nl.finnt730;
 
-import haxe.root.Array;
 import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -9,11 +8,13 @@ public final class AliasCommand extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
+    	String userid = event.getMessage().getAuthor().getId();
+    	String prefix = UserDB.prefix(userid);
         String rawMessage = event.getMessage().getContentRaw();
-        if (rawMessage.startsWith("!alias")) {
+        if (rawMessage.startsWith(prefix+"alias")) {
             String[] parts = rawMessage.split(" ");
             if(parts.length < 3) {
-                event.getChannel().sendMessage("Usage: !alias <existing_command> <new_alias>").queue();
+                event.getChannel().sendMessage("Usage:"+prefix+"alias <existing_command> <new_alias>").queue();
                 return;
             }
 

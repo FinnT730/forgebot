@@ -10,7 +10,9 @@ public final class RegisterNewCommand extends ListenerAdapter  {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        if(event.getMessage().getContentRaw().startsWith("!register")) {
+    	String userid = event.getMessage().getAuthor().getId();
+    	String prefix = UserDB.prefix(userid);
+        if(event.getMessage().getContentRaw().startsWith(prefix+"register")) {
             String command = event.getMessage().getContentRaw().substring(1).split(" ", 2)[0];
             String messageContent = event.getMessage().getContentRaw().substring(command.length() + 2);
 
@@ -22,7 +24,7 @@ public final class RegisterNewCommand extends ListenerAdapter  {
                 String[] parsedArgs = Global.parseQuotedString(messageContent);
                 
                 if (parsedArgs.length < 2) {
-                    event.getChannel().sendMessage("Usage: !register <name> \"<data>\" [description] [aliases]").queue();
+                    event.getChannel().sendMessage("Usage:"+ prefix +"register <name> \"<data>\" [description] [aliases]").queue();
                     return;
                 }
                 

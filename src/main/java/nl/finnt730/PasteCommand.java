@@ -1,28 +1,24 @@
 package nl.finnt730;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import nl.finnt730.paste.PasteSite;
 
 public final class PasteCommand extends ListenerAdapter {
 
-    private static final String MCLO_API_URL = "https://api.mclo.gs/1/log";
     private static final String NOTEBOOK_EMOJI = "📓";
     private static final Emoji NOTEBOOK_EMOJI_OBJ = Emoji.fromUnicode(NOTEBOOK_EMOJI);
     private static final int MAX_MESSAGE_LENGTH = 700;
@@ -61,89 +57,146 @@ public final class PasteCommand extends ListenerAdapter {
                 if (message.getReactions().stream().anyMatch(MessageReaction::isSelf)) {
                     message.clearReactions().queue();
                     var attachments = message.getAttachments();
-                    if (!attachments.isEmpty() && attachments.stream().noneMatch(it -> it.isImage() || it.isVideo())) {
-                        try {
-                            URL url = new URL(attachments.getFirst().getUrl());
-                            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                            connection.setRequestMethod("GET");
-
-                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                                StringBuilder content = new StringBuilder(10_000);
-                                String line;
-                                while ((line = reader.readLine()) != null) {
-                                    content.append(line).append("\n");
-                                }
-                                // Create paste with attachment content
-                                createPaste(content.toString(), event.getChannel(), message);
+                    
+                    // Check if there are non-image/video attachments
+                    boolean hasNonMediaAttachments = attachments.stream()
+                            .anyMatch(att -> !att.isImage() && !att.isVideo());
+                    
+                    if (hasNonMediaAttachments) {
+                        // Process all non-image/video attachments
+                        List<Message.Attachment> nonMediaAttachments = new ArrayList<>();
+                        for (Message.Attachment attachment : attachments) {
+                            if (!attachment.isImage() && !attachment.isVideo()) {
+                                nonMediaAttachments.add(attachment);
                             }
-                        } catch (Exception e) {
-                            event.getChannel().sendMessage("❌ Error reading attachment: " + e.getMessage()).queue();
                         }
+                        
+                        // Create pastes for all non-media attachments
+                        createPastesForAttachments(nonMediaAttachments, event.getChannel(), message, event.getUser().getId());
                     } else {
-                        // Use message content if no attachments
+                        // Use message content if no non-media attachments
                         String content = message.getContentRaw();
-                        createPaste(content, event.getChannel(), message);
+                        createPaste(content, event.getChannel(), message, event.getUser().getId(), "message");
                     }
                 }
             });
         }
     }
 
-    private static void createPaste(String content, net.dv8tion.jda.api.entities.channel.middleman.MessageChannel channel, Message message) {
+    private static void createPastesForAttachments(List<Message.Attachment> attachments, 
+                                                 MessageChannel channel, 
+                                                 Message message, 
+                                                 String userId) {
         CompletableFuture.runAsync(() -> {
             try {
-                // Prepare the POST data
-                String postData = "content=" + URLEncoder.encode(content, StandardCharsets.UTF_8);
-                byte[] postDataBytes = postData.getBytes(StandardCharsets.UTF_8);
+                List<String> pasteLinks = new ArrayList<>();
+                StringBuilder errorMessages = new StringBuilder();
+                
+                for (Message.Attachment attachment : attachments) {
+                    try {
+                        URL url = new URL(attachment.getUrl());
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setRequestMethod("GET");
+                        connection.setConnectTimeout(10000);
+                        connection.setReadTimeout(30000);
 
-                // Create connection
-                URL url = new URL(MCLO_API_URL);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("POST");
-                connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                connection.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
-                connection.setDoOutput(true);
-
-                // Send the data
-                try (OutputStream os = connection.getOutputStream()) {
-                    os.write(postDataBytes);
-                }
-
-                // Read the response
-                StringBuilder response = new StringBuilder();
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        response.append(line);
+                        try (BufferedReader reader = new BufferedReader(
+                                new InputStreamReader(connection.getInputStream()))) {
+                            
+                            StringBuilder content = new StringBuilder(10_000);
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                content.append(line).append("\n");
+                            }
+                            
+                            // Create paste with attachment content
+                            String pasteUrl = createPasteForContent(content.toString(), userId, attachment.getFileName());
+                            
+                            if (pasteUrl != null && !pasteUrl.isEmpty()) {
+                                // Use the attachment name as the label (without extension)
+                                String label = attachment.getFileName().replaceFirst("[.][^.]+$", "");
+                                pasteLinks.add("📝 [" + label + "](<" + pasteUrl + ">)");
+                            } else {
+                                errorMessages.append("❌ Failed to create paste for ").append(attachment.getFileName()).append("\n");
+                            }
+                        }
+                    } catch (Exception e) {
+                        errorMessages.append("❌ Error reading ").append(attachment.getFileName())
+                                .append(": ").append(e.getMessage()).append("\n");
                     }
                 }
+                
+                // Send the results
+                if (!pasteLinks.isEmpty()) {
+                    // Changed from newline to | separator
+                    String response = String.join(" | ", pasteLinks);
+                    if (errorMessages.length() > 0) {
+                        response += "\n" + errorMessages.toString().trim();
+                    }
+                    
+                    channel.sendMessage(response)
+                            .setMessageReference(message)
+                            .mentionRepliedUser(false)
+                            .queue();
+                } else if (errorMessages.length() > 0) {
+                    channel.sendMessage(errorMessages.toString().trim())
+                            .setMessageReference(message)
+                            .mentionRepliedUser(false)
+                            .queue();
+                }
+                
+            } catch (Exception e) {
+                channel.sendMessage("❌ Error processing attachments: " + e.getMessage())
+                        .setMessageReference(message)
+                        .mentionRepliedUser(false)
+                        .queue();
+                e.printStackTrace();
+            }
+        });
+    }
 
-                 // Parse the response (simple JSON parsing for the URL)
-                 String responseStr = response.toString();
-                 if (responseStr.contains("\"success\":true")) {
-                     // Extract the URLs from the response
-                     String pasteUrl = extractUrlFromResponse(responseStr);
-                     String rawUrl = extractRawUrlFromResponse(responseStr);
-                     if (pasteUrl != null && rawUrl != null) {
-                         String sentContent = "[Paste](<%s>) | [Raw](<%s>)".formatted(
-                                 pasteUrl.replace("\\", ""), rawUrl.replace("\\", ""));
-                         channel.sendMessage(sentContent)
-                                 .setMessageReference(message)
-                                 .mentionRepliedUser(false)
-                                 .queue();
-                     } else {
-                         channel.sendMessage("❌ Failed to create paste: Could not extract URLs from response.")
-                                 .setMessageReference(message)
-                                 .mentionRepliedUser(false)
-                                 .queue();
-                     }
-                 } else {
-                     channel.sendMessage("❌ Failed to create paste: " + responseStr)
-                             .setMessageReference(message)
-                             .mentionRepliedUser(false)
-                             .queue();
-                 }
+    private static String createPasteForContent(String content, String userId, String attachmentName) {
+        try {
+            // Get the appropriate paste site for the REACTING USER and content
+            PasteSite pasteSite = PasteSite.get(userId, content);
+            return pasteSite.getResultURL(content);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
+    private static void createPaste(String content, MessageChannel channel, Message message, 
+                                   String userId, String attachmentName) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                // Get the appropriate paste site for the REACTING USER and content
+                PasteSite pasteSite = PasteSite.get(userId, content);
+                String pasteUrl = pasteSite.getResultURL(content);
+                
+                if (pasteUrl == null || pasteUrl.isEmpty()) {
+                    channel.sendMessage("❌ Failed to create paste: Content too large for any service.")
+                            .setMessageReference(message)
+                            .mentionRepliedUser(false)
+                            .queue();
+                    return;
+                }
+                
+                // Format the message based on whether we have an attachment name
+                String formattedMessage;
+                if ("message".equals(attachmentName)) {
+                    formattedMessage = "📝 [Long message](<" + pasteUrl + ">)";
+                } else {
+                    // Use the attachment name as the label
+                    String label = attachmentName.replaceFirst("[.][^.]+$", ""); // Remove extension
+                    formattedMessage = "📝 [" + label + "](<" + pasteUrl + ">)";
+                }
+                
+                channel.sendMessage(formattedMessage)
+                        .setMessageReference(message)
+                        .mentionRepliedUser(false)
+                        .queue();
+                        
             } catch (Exception e) {
                 channel.sendMessage("❌ Error creating paste: " + e.getMessage())
                         .setMessageReference(message)
@@ -153,32 +206,4 @@ public final class PasteCommand extends ListenerAdapter {
             }
         });
     }
-
-     private static String extractUrlFromResponse(String response) {
-         // Simple JSON parsing to extract the URL
-         // Looking for "url":"https://mclo.gs/..."
-         int urlIndex = response.indexOf("\"url\":\"");
-         if (urlIndex != -1) {
-             urlIndex += 7; // Skip "url":"
-             int endIndex = response.indexOf("\"", urlIndex);
-             if (endIndex != -1) {
-                 return response.substring(urlIndex, endIndex);
-             }
-         }
-         return null;
-     }
-
-     private static String extractRawUrlFromResponse(String response) {
-         // Simple JSON parsing to extract the raw URL
-         // Looking for "raw":"https://api.mclo.gs/1/raw/..."
-         int rawIndex = response.indexOf("\"raw\":\"");
-         if (rawIndex != -1) {
-             rawIndex += 7; // Skip "raw":"
-             int endIndex = response.indexOf("\"", rawIndex);
-             if (endIndex != -1) {
-                 return response.substring(rawIndex, endIndex);
-             }
-         }
-         return null;
-     }
 }
