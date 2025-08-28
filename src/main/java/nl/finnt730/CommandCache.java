@@ -31,12 +31,14 @@ public class CommandCache {
         CommandContext result = null;
         // Get if not in cache.
         try {
-            var cmdJson = JsonStructureLib.createReader().readFile("commands/" + actualCommand + ".json");
+            var cmdJson = JsonStructureLib.createReader().readFile(Global.commandOf(actualCommand));
             if (cmdJson != null && cmdJson.getString("name", "_null").equals(actualCommand)) {
                 String data = cmdJson.getString("data", "");
                 // todo will need adaptation for things that aren't EchoCommands, but atm everything is... so.... :)
                 result = new CommandContext(new EchoCommand(data), null);
             }
+        } catch (Exception ignored) {} // if finn is ignoring exceptions then so will I
+        try {
             // Find alias if present
             var files = new java.io.File("commands").listFiles((dir, name) -> name.endsWith(".json"));
             if (files != null) {
@@ -50,7 +52,7 @@ public class CommandCache {
                     }
                 }
             }
-        } catch (Exception ignored) {} // if finn is ignoring exceptions then so will I
+        } catch (Exception ignored) {}
         if (result != null) {
             cache.put(actualCommand, result.command());
             return result;

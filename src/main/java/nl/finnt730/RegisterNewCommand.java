@@ -16,13 +16,13 @@ public final class RegisterNewCommand extends ReservedCommand {
             return;
         }
         String command = split[0];
-        String description = split[1].replace("\"", "");
+        String description = split[1];
         // Parse the message content properly to handle quoted strings
         String[] parsedArgs = Global.parseQuotedString(description);
 
-        String data = parsedArgs[1];
-        description = parsedArgs.length > 2 ? parsedArgs[2] : "No description provided";
-        String[] aliases = parsedArgs.length > 3 ? parsedArgs[3].split(",") : new String[0];
+        String data = parsedArgs[0];
+        description = parsedArgs.length > 1 ? parsedArgs[1] : "No description provided";
+        String[] aliases = parsedArgs.length > 2 ? parsedArgs[2].split(",") : new String[0];
 //                StringBuilder options = new StringBuilder();
 //                for (int i = 4; i < args.length; i++) {
 //                    options.append(args[i]).append(" ");
@@ -30,7 +30,7 @@ public final class RegisterNewCommand extends ReservedCommand {
 //                String optionsString = options.toString().trim();
 
         try {
-            DynamicJson json_exists = JsonStructureLib.createReader().readFile(String.format(Global.COMMANDS_LOCATION, command));
+            DynamicJson json_exists = JsonStructureLib.createReader().readFile(Global.commandOf(command));
             if(json_exists != null) {
                 event.getChannel().sendMessage("Command with name " + command + " already exists!").queue();
                 return;
@@ -56,7 +56,7 @@ public final class RegisterNewCommand extends ReservedCommand {
 //                        .addStringField("options", optionsString)
                 .build();
 
-        JsonStructureLib.writeJsonFile(commandObject, String.format(Global.COMMANDS_LOCATION, command), Global.COMMAND_STRUCTURE);
+        JsonStructureLib.writeJsonFile(commandObject, Global.commandOf(command), Global.COMMAND_STRUCTURE);
         event.getChannel().sendMessage("Command has been registered!").queue();
     }
 }

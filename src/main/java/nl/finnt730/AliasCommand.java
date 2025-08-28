@@ -15,11 +15,11 @@ public final class AliasCommand extends ReservedCommand {
             return;
         }
 
-        String existingCommandName = parts[1];
-        String newAlias = parts[2];
+        String existingCommandName = parts[0];
+        String newAlias = parts[1];
 
         // File is arbiter of truth so I guess it's fine to do IO every time.
-        var command = JsonStructureLib.createReader().readFile(String.format(Global.COMMANDS_LOCATION, existingCommandName));
+        var command = JsonStructureLib.createReader().readFile(Global.commandOf(existingCommandName));
         if (command == null || command.getString("name", "_null").equals("_null")) {
             event.getChannel().sendMessage("Command " + existingCommandName + " not found!").queue();
             return;
@@ -40,7 +40,7 @@ public final class AliasCommand extends ReservedCommand {
                 .addStringArrayField("aliases", aliases)
                 .build();
 
-        JsonStructureLib.writeJsonFile(updatedCommand, String.format(Global.COMMANDS_LOCATION, existingCommandName), null);
+        JsonStructureLib.writeJsonFile(updatedCommand, Global.commandOf(existingCommandName), null);
         event.getChannel().sendMessage("Alias " + newAlias + " added to command " + existingCommandName + "!").queue();
     }
 }
