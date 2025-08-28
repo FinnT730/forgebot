@@ -2,13 +2,13 @@ package nl.finnt730.paste;
 
 import nl.finnt730.UserDB;
 
-public interface PasteSite {
+public sealed interface PasteSite permits MCLogs,PastesDev,SecureLogger,MMDPaste{
 
-	public static PasteSite MCLOGS = new MCLogs();
-	public static PasteSite GNOMEBOT = new GnomeBot();
-	public static PasteSite PASTESDEV = new PastesDev();//ByteBin appears to have been deprecated today in favour of pastes.dev
-	public static PasteSite SECURELOGGER = new SecureLogger();
-	public static PasteSite MMD = new MMDPaste();
+	public final static PasteSite MCLOGS = new MCLogs();
+	public final static PasteSite GNOMEBOT = new GnomeBot();
+	public final static PasteSite PASTESDEV = new PastesDev();//ByteBin appears to have been deprecated today in favour of pastes.dev
+	public final static PasteSite SECURELOGGER = new SecureLogger();
+	public final static PasteSite MMD = new MMDPaste();
 	
 	
 	/**
@@ -32,18 +32,20 @@ public interface PasteSite {
 	 * @return
 	 */
 	public static PasteSite getPure(String id) {
-		if(id.equals("mclogs")) {
-			return MCLOGS;
-		}else if(id.equals("gnomebot")) {
-			return GNOMEBOT;
-		}else if(id.equals("pastesdev")) {
-			return PASTESDEV;
-		}else if(id.equals("securelogger")) {
-			return SECURELOGGER;
-		}else if(id.equals("mmd")) {
-			return MMD;
-		}
-		return MCLOGS;
+	    switch (id) {
+	        case "mclogs":
+	            return MCLOGS;
+	        case "gnomebot":
+	            return GNOMEBOT;
+	        case "pastesdev":
+	            return PASTESDEV;
+	        case "securelogger":
+	            return SECURELOGGER;
+	        case "mmd":
+	            return MMD;
+	        default:
+	            return MCLOGS;
+	    }
 	}
 	
 	public boolean largeEnough(String content);

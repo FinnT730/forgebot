@@ -7,7 +7,8 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UserDB {
+//TODO move to actual DB
+public final class UserDB {
     private static final String DB_FILE = "userdb.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String DEFAULT_PASTE_SITE = "mclogs";

@@ -47,7 +47,7 @@ public final class PasteSiteCommand extends ListenerAdapter {
         }
     }
     
-    private boolean isValidPasteSite(String site) {
+    private static boolean isValidPasteSite(String site) {
         return "mclogs".equals(site) || 
                "pastesdev".equals(site) || 
                "gnomebot".equals(site) || 
@@ -55,7 +55,7 @@ public final class PasteSiteCommand extends ListenerAdapter {
                "mmd".equals(site);
     }
     
-    private String getSiteName(String site) {
+    private static String getSiteName(String site) {
         switch (site) {
             case "mclogs": return "MCLogs";
             case "gnomebot": return "gnomebot.dev";

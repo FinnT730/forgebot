@@ -3,7 +3,10 @@ package nl.finnt730;
 import com.jsonstructure.JsonStructure;
 import haxe.root.JsonStructureLib;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.zip.GZIPOutputStream;
 
 public final class Global {
     private Global() {}
@@ -61,5 +64,13 @@ public final class Global {
         }
 
         return result.toArray(new String[0]);
+    }
+    
+    public static byte[] compressGZIP(byte[] data) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzip = new GZIPOutputStream(buffer)) {
+            gzip.write(data);
+        }
+        return buffer.toByteArray();
     }
 }

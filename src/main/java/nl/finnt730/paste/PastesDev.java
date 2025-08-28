@@ -1,15 +1,18 @@
 package nl.finnt730.paste;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.zip.GZIPOutputStream;
+
+import nl.finnt730.Global;
 
 /**
  * Sucessor to ByteBin, however unlike ByteBin it is not Raw only (SecureLogger is though). Supported by NotEnoughCrashes, CrashDetector, and Spark. Supports GZipping and large amounts of content, best for large amounts of content.
  */
-public class PastesDev implements PasteSite {
+public final class PastesDev implements PasteSite {
 
     private static final String API_BASE_URL = "https://api.pastes.dev/";
     private static final String USER_AGENT = "ForgeBot (https://github.com/FinnT730/forgebot)";
@@ -21,7 +24,7 @@ public class PastesDev implements PasteSite {
         // Check if content can be compressed under 15MB
         try {
             byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
-            byte[] compressed = compressGZIP(contentBytes);
+            byte[] compressed = Global.compressGZIP(contentBytes);
             return compressed.length <= MAX_GZIPPED_SIZE_BYTES;
         } catch (Exception e) {
             return false;
@@ -42,7 +45,7 @@ public class PastesDev implements PasteSite {
             }
             
             byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
-            byte[] compressedBytes = compressGZIP(contentBytes);
+            byte[] compressedBytes = Global.compressGZIP(contentBytes);
             
             // Create connection
             URL url = new URL(API_BASE_URL + "post");
@@ -107,13 +110,5 @@ public class PastesDev implements PasteSite {
             e.printStackTrace();
             return null;
         }
-    }
-
-    private byte[] compressGZIP(byte[] data) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        try (GZIPOutputStream gzip = new GZIPOutputStream(buffer)) {
-            gzip.write(data);
-        }
-        return buffer.toByteArray();
     }
 }

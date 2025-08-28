@@ -1,7 +1,6 @@
 package nl.finnt730.paste;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -11,26 +10,21 @@ import java.net.Proxy;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.zip.GZIPOutputStream;
+
+import nl.finnt730.Global;
 
 /**
  * GZipped Raw paste site. Used by TLauncher and CrashDetector
  */
-public class SecureLogger implements PasteSite {
+public final class SecureLogger implements PasteSite {
 
-    private static final List<String> API_ENDPOINTS = new ArrayList<>();
+    private static final List<String> API_ENDPOINTS = List.of("https://securelogger.net/save/log?", "https://securelogger.top/save/log?");
     private static final int MAX_GZIPPED_SIZE_BYTES = 11 * 1024 * 1024; // 11MB for gzipped content
     private static final int MAX_LINES = 25000;
     private static final String CLIENT_TYPE = "USER_CODE";
     private static final String API_VERSION = "2.923";
-    
-    static {
-        API_ENDPOINTS.add("https://securelogger.net/save/log?");
-        API_ENDPOINTS.add("https://securelogger.top/save/log?");
-    }
 
     @Override
     public boolean largeEnough(String content) {
@@ -53,7 +47,7 @@ public class SecureLogger implements PasteSite {
         // Try to estimate compressed size without full compression
         try {
             byte[] contentBytes = content.getBytes("cp1251");
-            byte[] compressed = compressGZIP(contentBytes);
+            byte[] compressed = Global.compressGZIP(contentBytes);
             return compressed.length <= MAX_GZIPPED_SIZE_BYTES;
         } catch (Exception e) {
             // If compression fails, assume it's too large
@@ -102,7 +96,7 @@ public class SecureLogger implements PasteSite {
         }
     }
 
-    private String sendPostRequest(URL url, String content) throws IOException {
+    private static String sendPostRequest(URL url, String content) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
         connection.setRequestMethod("POST");
         connection.setConnectTimeout(30000);  // 30 seconds
@@ -113,7 +107,7 @@ public class SecureLogger implements PasteSite {
 
         try (OutputStream os = connection.getOutputStream()) {
             byte[] contentBytes = content.getBytes("cp1251");
-            byte[] compressedBytes = compressGZIP(contentBytes);
+            byte[] compressedBytes = Global.compressGZIP(contentBytes);
             os.write(compressedBytes);
         }
 
@@ -121,14 +115,6 @@ public class SecureLogger implements PasteSite {
              BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             return reader.lines().collect(Collectors.joining("\n"));
         }
-    }
-
-    private byte[] compressGZIP(byte[] data) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        try (GZIPOutputStream gzip = new GZIPOutputStream(buffer)) {
-            gzip.write(data);
-        }
-        return buffer.toByteArray();
     }
 
     /**

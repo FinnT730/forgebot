@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * A Stikked based paste site. Supported by CrashDetector and has a good GUI for manual pasting. Supports many languages
  */
-public class MMDPaste implements PasteSite {
+public final class MMDPaste implements PasteSite {
 
     private static final String API_ENDPOINT = "https://paste.mikumikudance.jp/en/api/create";
     private static final int MAX_SIZE_BYTES = 16 * 1024 * 1024; // 16MB
