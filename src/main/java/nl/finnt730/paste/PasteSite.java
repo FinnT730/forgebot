@@ -2,12 +2,10 @@ package nl.finnt730.paste;
 
 import nl.finnt730.UserDB;
 
-public sealed interface PasteSite permits MCLogs,PastesDev,SecureLogger,MMDPaste{
+public sealed interface PasteSite permits MCLogs,PastesDev,MMDPaste{
 
 	public final static PasteSite MCLOGS = new MCLogs();
-	public final static PasteSite GNOMEBOT = new GnomeBot();
 	public final static PasteSite PASTESDEV = new PastesDev();//ByteBin appears to have been deprecated today in favour of pastes.dev
-	public final static PasteSite SECURELOGGER = new SecureLogger();
 	public final static PasteSite MMD = new MMDPaste();
 	
 	
@@ -35,12 +33,8 @@ public sealed interface PasteSite permits MCLogs,PastesDev,SecureLogger,MMDPaste
 	    switch (id) {
 	        case "mclogs":
 	            return MCLOGS;
-	        case "gnomebot":
-	            return GNOMEBOT;
 	        case "pastesdev":
 	            return PASTESDEV;
-	        case "securelogger":
-	            return SECURELOGGER;
 	        case "mmd":
 	            return MMD;
 	        default:
