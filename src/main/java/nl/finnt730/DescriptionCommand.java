@@ -11,10 +11,8 @@ public final class DescriptionCommand extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-    	String userid = event.getMessage().getAuthor().getId();
-    	String prefix = UserDB.prefix(userid);
         String rawMessage = event.getMessage().getContentRaw();
-        if (rawMessage.startsWith(prefix+"description")) {
+        if (rawMessage.startsWith("!description")) {
             String command = rawMessage.substring(1).split(" ", 2)[0];
             String messageContent = rawMessage.substring(command.length() + 2);
 
@@ -30,7 +28,7 @@ public final class DescriptionCommand extends ListenerAdapter {
                 String[] parsedArgs = Global.parseQuotedString(messageContent);
                 
                 if (parsedArgs.length < 2) {
-                    event.getChannel().sendMessage("Usage:"+prefix+"description <command_name> \"<new_description>\"").queue();
+                    event.getChannel().sendMessage("Usage: !description <command_name> \"<new_description>\"").queue();
                     return;
                 }
                 

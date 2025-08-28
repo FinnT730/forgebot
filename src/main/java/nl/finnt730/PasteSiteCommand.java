@@ -11,7 +11,7 @@ public final class PasteSiteCommand extends ListenerAdapter {
         String userid = event.getMessage().getAuthor().getId();
         
         // Get current prefix from UserDB (this will return "!" if none set)
-        String currentPrefix = UserDB.prefix(userid);
+        String currentPrefix = "!";
         String rawMessage = event.getMessage().getContentRaw();
         
         boolean startsWithCurrentPrefix = rawMessage.startsWith(currentPrefix + "pastesite");

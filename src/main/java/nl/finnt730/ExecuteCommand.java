@@ -7,16 +7,14 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import java.util.Set;
 
 public final class ExecuteCommand extends ListenerAdapter {
-    private static final Set<String> RESERVED_COMMANDS = Set.of("register", "alias", "delete", "description","prefix","pastesite");
+    private static final Set<String> RESERVED_COMMANDS = Set.of("register", "alias", "delete", "description");
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-    	String userid = event.getMessage().getAuthor().getId();
-    	String prefix = UserDB.prefix(userid);
         String rawMessage = event.getMessage().getContentRaw();
 
-        // Check if the message starts with "!" or the users preferred prefix
-        if (rawMessage.isEmpty() || !rawMessage.startsWith(prefix))
+        // Check if the message starts with "!"
+        if (rawMessage.isEmpty() || rawMessage.charAt(0) != '!')
             return;
 
         String commandName = rawMessage.substring(1).split(" ", 2)[0];

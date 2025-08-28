@@ -12,67 +12,33 @@ public final class UserDB {
     private static final String DB_FILE = "userdb.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String DEFAULT_PASTE_SITE = "mclogs";
-    private static final String DEFAULT_PREFIX = "!";
-    
-    // Internal structure for user data
+
+    // Internal structure for user data (only pasteSite now)
     private static class UserData {
         String pasteSite = DEFAULT_PASTE_SITE;
-        String prefix = DEFAULT_PREFIX;
     }
 
     /**
-     * Generic getter that retrieves any field for a user
+     * Get paste site for a user
      * @param userid The user ID to look up
-     * @param key The field name to retrieve ("pasteSite" or "prefix")
-     * @return The field value, or default if not found
+     * @return The pasteSite value, or default if not found
      */
-    public static String get(String userid, String key) {
+    public static String pasteSite(String userid) {
         Map<String, UserData> db = loadDB();
         UserData user = db.get(userid);
-        
-        if (user == null) {
-            return "pastesite".equals(key) ? DEFAULT_PASTE_SITE : 
-                   "prefix".equals(key) ? DEFAULT_PREFIX : null;
-        }
-        
-        return "pastesite".equals(key) ? user.pasteSite : 
-               "prefix".equals(key) ? user.prefix : null;
+        return user == null ? DEFAULT_PASTE_SITE : user.pasteSite;
     }
-    
+
     /**
-     * Generic setter that sets any field for a user
+     * Set paste site for a user
      * @param userid The user ID to update
-     * @param key The field name to set ("pasteSite" or "prefix")
-     * @param value The value to set
+     * @param value The paste site value to set
      */
-    public static void set(String userid, String key, String value) {
+    public static void setPasteSite(String userid, String value) {
         Map<String, UserData> db = loadDB();
         UserData user = db.computeIfAbsent(userid, k -> new UserData());
-        
-        if ("pastesite".equals(key)) {
-            user.pasteSite = value;
-        } else if ("prefix".equals(key)) {
-            user.prefix = value;
-        }
-        
+        user.pasteSite = value;
         saveDB(db);
-    }
-    
-    // Specific methods
-    public static String pasteSite(String userid) {
-        return get(userid, "pastesite");
-    }
-    
-    public static String prefix(String userid) {
-        return get(userid, "prefix");
-    }
-    
-    public static void setPasteSite(String userid, String value) {
-        set(userid, "pastesite", value);
-    }
-    
-    public static void setPrefix(String userid, String value) {
-        set(userid, "prefix", value);
     }
 
     // Internal database operations
@@ -81,9 +47,10 @@ public final class UserDB {
         if (!file.exists()) {
             return new HashMap<>();
         }
-        
+
         try (Reader reader = new FileReader(file)) {
-            return GSON.fromJson(reader, new TypeToken<Map<String, UserData>>(){}.getType());
+            Map<String, UserData> data = GSON.fromJson(reader, new TypeToken<Map<String, UserData>>(){}.getType());
+            return data == null ? new HashMap<>() : data;
         } catch (Exception e) {
             System.err.println("Error loading user database: " + e.getMessage());
             return new HashMap<>();

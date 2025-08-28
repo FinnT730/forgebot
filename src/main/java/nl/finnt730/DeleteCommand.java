@@ -12,10 +12,8 @@ public final class DeleteCommand extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-    	String userid = event.getMessage().getAuthor().getId();
-    	String prefix = UserDB.prefix(userid);
         String rawMessage = event.getMessage().getContentRaw();
-        if (rawMessage.startsWith(prefix+"delete")) {
+        if (rawMessage.startsWith("!delete")) {
             String command = rawMessage.substring(1).split(" ", 2)[0];
             String messageContent = rawMessage.substring(command.length() + 2);
 
@@ -31,7 +29,7 @@ public final class DeleteCommand extends ListenerAdapter {
                 String commandName = messageContent.trim();
                 
                 if (commandName.isEmpty()) {
-                    event.getChannel().sendMessage("Usage:"+prefix+"delete <command_name>").queue();
+                    event.getChannel().sendMessage("Usage: !delete <command_name>").queue();
                     return;
                 }
 

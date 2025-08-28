@@ -20,7 +20,6 @@ public final class Main {
                     .addEventListeners(new AliasCommand())
                     .addEventListeners(new DeleteCommand())
                     .addEventListeners(new DescriptionCommand())
-                    .addEventListeners(new PrefixCommand())
                     .addEventListeners(new PasteSiteCommand())
                     .addEventListeners(new PasteCommand())
                     .build();
