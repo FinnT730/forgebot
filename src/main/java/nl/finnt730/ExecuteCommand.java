@@ -1,6 +1,5 @@
 package nl.finnt730;
 
-import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -15,13 +14,15 @@ public final class ExecuteCommand extends ListenerAdapter {
         String rawMessage = event.getMessage().getContentRaw();
         if (rawMessage.isEmpty()) return;
         String author = event.getAuthor().getName();
-        var context = CommandCache.getOrDefault(event.getAuthor().getName(), rawMessage);
+        boolean silent = rawMessage.startsWith("s") || rawMessage.startsWith("S");
+        var context = CommandCache.getOrDefault(event.getAuthor().getName(), silent ? rawMessage.substring(1) : rawMessage);
         if (context == CommandContext.NONE) {
             return; // Was not a command
         } else if (context == CommandContext.NOT_FOUND) {
             event.getChannel().sendMessage("Command not found!").queue();
         } else {
             context.command().handle(event, author, context.additionalData());
+            if (silent) event.getMessage().delete().queue();
         }
 
 //        var command = JsonStructureLib.createReader().readFile("commands/" + event.getMessage().getContentRaw().substring(1).split(" ")[0] + ".json");

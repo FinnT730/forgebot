@@ -6,8 +6,7 @@ import java.util.*;
 
 public class CommandCache {
     private static final Map<String, Command> cache = new HashMap<>();
-    private static final Map<String, Set<Character>> userDefinedPrefixes = new HashMap<>();
-    private static final char DEFAULT_PREFIX = '!';
+    private static final String DEFAULT_PREFIX = "!";
 
     // Init reserved commands
     static {
@@ -17,25 +16,15 @@ public class CommandCache {
         cache.put("description", new DescriptionCommand());
     }
     public static CommandContext getOrDefault(String user, String rawContent) {
-        // Check if user has any additional prefixes.
-        var prefixes = userDefinedPrefixes.get(user);
-        if (prefixes == null) {
-            prefixes = new HashSet<>();
-            prefixes.add(DEFAULT_PREFIX);
-            userDefinedPrefixes.put(user, prefixes);
-        }
-
         // Parse out the actual command
         String actualCommand = null;
         String additionalData = null;
-        for (char prefix : prefixes) {
-            if (rawContent.charAt(0) == prefix) {
-                var temp = rawContent.substring(1).split(" ");
-                actualCommand = temp[0];
-                additionalData = rawContent.substring(actualCommand.length() + 1).trim();
-                break;
-            }
+        if (rawContent.startsWith(DEFAULT_PREFIX)) {
+            var temp = rawContent.substring(1).split(" ");
+            actualCommand = temp[0];
+            additionalData = rawContent.substring(actualCommand.length() + 1).trim();
         }
+
         if (actualCommand == null) return CommandContext.NONE;
         if (cache.containsKey(actualCommand)) return new CommandContext(cache.get(actualCommand), additionalData);
 

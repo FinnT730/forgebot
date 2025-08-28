@@ -1,11 +1,7 @@
 package nl.finnt730;
 
-import haxe.root.Array;
 import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
-
-import java.util.function.Consumer;
 
 public final class AliasCommand extends ReservedCommand {
     private static final String USAGE_HINT = "Usage: !alias <existing_command> <new_alias>";
@@ -23,7 +19,7 @@ public final class AliasCommand extends ReservedCommand {
         String newAlias = parts[2];
 
         // File is arbiter of truth so I guess it's fine to do IO every time.
-        var command = JsonStructureLib.createReader().readFile("commands/" + existingCommandName + ".json");
+        var command = JsonStructureLib.createReader().readFile(String.format(Global.COMMANDS_LOCATION, existingCommandName));
         if (command == null || command.getString("name", "_null").equals("_null")) {
             event.getChannel().sendMessage("Command " + existingCommandName + " not found!").queue();
             return;
@@ -44,7 +40,7 @@ public final class AliasCommand extends ReservedCommand {
                 .addStringArrayField("aliases", aliases)
                 .build();
 
-        JsonStructureLib.writeJsonFile(updatedCommand, "commands/" + existingCommandName + ".json", null);
+        JsonStructureLib.writeJsonFile(updatedCommand, String.format(Global.COMMANDS_LOCATION, existingCommandName), null);
         event.getChannel().sendMessage("Alias " + newAlias + " added to command " + existingCommandName + "!").queue();
     }
 }

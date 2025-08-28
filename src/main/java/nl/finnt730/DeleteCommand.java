@@ -1,12 +1,9 @@
 package nl.finnt730;
 
 import haxe.root.JsonStructureLib;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.io.File;
-import java.util.Objects;
 
 public final class DeleteCommand extends ReservedCommand {
 
@@ -34,7 +31,7 @@ public final class DeleteCommand extends ReservedCommand {
 
             try {
                 // Check if the command exists
-                var commandFile = JsonStructureLib.createReader().readFile("commands/" + commandName + ".json");
+                var commandFile = JsonStructureLib.createReader().readFile(String.format(Global.COMMANDS_LOCATION, commandName));
                 if (commandFile == null) {
                     event.getChannel().sendMessage("❌ Command `" + commandName + "` not found!").queue();
                     return;
@@ -48,7 +45,7 @@ public final class DeleteCommand extends ReservedCommand {
                 }
 
                 // Delete the command file
-                File fileToDelete = new File("commands/" + commandName + ".json");
+                File fileToDelete = new File(String.format(Global.COMMANDS_LOCATION, commandName));
                 if (fileToDelete.exists() && fileToDelete.delete()) {
                     CommandCache.invalidateOnUpdate(commandName);
                     event.getChannel().sendMessage("✅ Successfully deleted command `" + commandName + "`!").queue();

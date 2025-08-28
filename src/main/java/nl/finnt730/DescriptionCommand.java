@@ -3,7 +3,6 @@ package nl.finnt730;
 import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.util.Objects;
 
@@ -36,7 +35,7 @@ public final class DescriptionCommand extends ReservedCommand {
 
             try {
                 // Check if the command exists
-                var commandFile = JsonStructureLib.createReader().readFile("commands/" + commandName + ".json");
+                var commandFile = JsonStructureLib.createReader().readFile(String.format(Global.COMMANDS_LOCATION, commandName));
                 if (commandFile == null) {
                     event.getChannel().sendMessage("❌ Command `" + commandName + "` not found!").queue();
                     return;
@@ -64,7 +63,7 @@ public final class DescriptionCommand extends ReservedCommand {
                         .build();
 
                 // Write the updated command back to file
-                JsonStructureLib.writeJsonFile(updatedCommandObject, "commands/" + commandName + ".json", Global.COMMAND_STRUCTURE);
+                JsonStructureLib.writeJsonFile(updatedCommandObject, String.format(Global.COMMANDS_LOCATION, commandName), Global.COMMAND_STRUCTURE);
 
                 event.getChannel().sendMessage("✅ Successfully updated description for command `" + commandName + "`!\n" +
                         "**Old description:** " + oldDescription + "\n" +

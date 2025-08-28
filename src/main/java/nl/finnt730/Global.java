@@ -6,6 +6,7 @@ import haxe.root.JsonStructureLib;
 import java.util.ArrayList;
 
 public final class Global {
+    public static final String COMMANDS_LOCATION = "commands/%s.json";
     private Global() {}
 
     public static final JsonStructure COMMAND_STRUCTURE = JsonStructureLib.createStructure()
