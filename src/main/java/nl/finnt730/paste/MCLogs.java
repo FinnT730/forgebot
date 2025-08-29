@@ -94,4 +94,10 @@ public final class MCLogs implements PasteSite {
             return null;
         }
     }
+
+	@Override
+	public String getId() {
+		// TODO Auto-generated method stub
+		return "mclogs";
+	}
 }

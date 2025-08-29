@@ -84,4 +84,10 @@ public final class MMDPaste implements PasteSite {
             return null;
         }
     }
+
+	@Override
+	public String getId() {
+		// TODO Auto-generated method stub
+		return "mmd";
+	}
 }

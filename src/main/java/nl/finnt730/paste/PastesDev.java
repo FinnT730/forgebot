@@ -111,4 +111,10 @@ public final class PastesDev implements PasteSite {
             return null;
         }
     }
+
+	@Override
+	public String getId() {
+		// TODO Auto-generated method stub
+		return "pastesdev";
+	}
 }

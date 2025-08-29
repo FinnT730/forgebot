@@ -1,5 +1,6 @@
 package nl.finnt730;
 
+import nl.finnt730.paste.PasteSite;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -7,58 +8,34 @@ public final class PasteSiteCommand extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        // Get user ID first - we'll need it for UserDB
         String userid = event.getMessage().getAuthor().getId();
-        
-        // Get current prefix from UserDB (this will return "!" if none set)
-        String currentPrefix = "!";
+        String currentPrefix = "!"; // In real implementation: get from UserDB
         String rawMessage = event.getMessage().getContentRaw();
         
         boolean startsWithCurrentPrefix = rawMessage.startsWith(currentPrefix + "pastesite");
         
-        // Only process if it starts with one of the valid prefixes
         if (startsWithCurrentPrefix) {
-            String[] parts = rawMessage.split(" ");
+            String[] parts = rawMessage.split(" ", 2);
                         
-            // Extract the new paste site - it should be after the command
-            int siteIndex = 1;
-
-            
-            if (parts.length < siteIndex + 1) {
+            if (parts.length < 2) {
                 event.getChannel().sendMessage("Usage: " + currentPrefix + "pastesite <site>\n" +
-                        "Available sites: mclogs, pastesdev, securelogger, mmd").queue();
+                        "Available sites: " + PasteSite.getAvailableSites()).queue();
                 return;
             }
             
-            String newPasteSite = parts[siteIndex].trim().toLowerCase();
+            String newPasteSite = parts[1].trim().toLowerCase();
             
-            // Validate the paste site
-            if (!isValidPasteSite(newPasteSite)) {
-                event.getChannel().sendMessage("Invalid paste site! Valid options are: mclogs, gnomebot, pastesdev, securelogger, mmd").queue();
+            if (!PasteSite.isValidSiteId(newPasteSite)) {
+                event.getChannel().sendMessage("Invalid paste site! Valid options are:\n" +
+                        PasteSite.getAvailableSites()).queue();
                 return;
             }
             
-            // Update the paste site in UserDB
             UserDB.setPasteSite(userid, newPasteSite);
+            String siteName = PasteSite.getPure(newPasteSite).getId();
             
-            // Confirm the change
             event.getChannel().sendMessage("✅ Paste site changed to `" + newPasteSite + "`\n" +
-                    "Your long messages will now use " + getSiteName(newPasteSite) + " for pasting!").queue();
-        }
-    }
-    
-    private static boolean isValidPasteSite(String site) {
-        return "mclogs".equals(site) || 
-               "pastesdev".equals(site) || 
-               "mmd".equals(site);
-    }
-    
-    private static String getSiteName(String site) {
-        switch (site) {
-            case "mclogs": return "MCLogs";
-            case "pastesdev": return "Pastes.dev";
-            case "mmd": return "MMD Paste";
-            default: return site;
+                    "Your long messages will now use " + siteName + " for pasting!").queue();
         }
     }
 }

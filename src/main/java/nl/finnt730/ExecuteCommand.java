@@ -7,7 +7,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import java.util.Set;
 
 public final class ExecuteCommand extends ListenerAdapter {
-    private static final Set<String> RESERVED_COMMANDS = Set.of("register", "alias", "delete", "description");
+    private static final Set<String> RESERVED_COMMANDS = Set.of("register", "alias", "delete", "description","pastesite");
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
