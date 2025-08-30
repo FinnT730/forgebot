@@ -15,12 +15,7 @@ public final class Main {
             String botToken = json.getString("botToken", "");
 
             JDABuilder.createLight(botToken, EnumSet.of(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGE_POLLS, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGE_REACTIONS))
-                    .addEventListeners(new RegisterNewCommand())
                     .addEventListeners(new ExecuteCommand())
-                    .addEventListeners(new AliasCommand())
-                    .addEventListeners(new DeleteCommand())
-                    .addEventListeners(new DescriptionCommand())
-                    .addEventListeners(new PasteSiteCommand())
                     .addEventListeners(new PasteCommand())
                     .build();
         } catch (Exception e) {

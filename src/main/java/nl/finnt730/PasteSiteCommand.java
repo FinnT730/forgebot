@@ -1,15 +1,15 @@
 package nl.finnt730;
 
-import nl.finnt730.paste.PasteSite;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import nl.finnt730.paste.PasteSite;
 
-public final class PasteSiteCommand extends ListenerAdapter {
+public final class PasteSiteCommand extends ReservedCommand {
 
-    @Override
-    public void onMessageReceived(MessageReceivedEvent event) {
+	@Override
+	public void handle(MessageReceivedEvent event, String invoker, String commandContents) {
+		// TODO Auto-generated method stub
         String userid = event.getMessage().getAuthor().getId();
-        String currentPrefix = "!"; // In real implementation: get from UserDB
+        String currentPrefix = CommandCache.DEFAULT_PREFIX;
         String rawMessage = event.getMessage().getContentRaw();
         
         boolean startsWithCurrentPrefix = rawMessage.startsWith(currentPrefix + "pastesite");
@@ -37,5 +37,5 @@ public final class PasteSiteCommand extends ListenerAdapter {
             event.getChannel().sendMessage("✅ Paste site changed to `" + newPasteSite + "`\n" +
                     "Your long messages will now use " + siteName + " for pasting!").queue();
         }
-    }
+	}
 }

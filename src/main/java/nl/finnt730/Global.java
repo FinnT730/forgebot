@@ -1,14 +1,16 @@
 package nl.finnt730;
 
-import com.jsonstructure.JsonStructure;
-import haxe.root.JsonStructureLib;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.zip.GZIPOutputStream;
 
+import com.jsonstructure.JsonStructure;
+
+import haxe.root.JsonStructureLib;
+
 public final class Global {
+    private static final String COMMANDS_LOCATION = "commands/%s.json";
     private Global() {}
 
     public static final JsonStructure COMMAND_STRUCTURE = JsonStructureLib.createStructure()
@@ -65,7 +67,11 @@ public final class Global {
 
         return result.toArray(new String[0]);
     }
-    
+
+    public static String commandOf(String cmdName) {
+        return String.format(COMMANDS_LOCATION, cmdName);
+    }
+
     public static byte[] compressGZIP(byte[] data) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         try (GZIPOutputStream gzip = new GZIPOutputStream(buffer)) {
@@ -73,4 +79,5 @@ public final class Global {
         }
         return buffer.toByteArray();
     }
+
 }
