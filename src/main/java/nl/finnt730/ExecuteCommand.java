@@ -1,6 +1,5 @@
 package nl.finnt730;
 
-import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -11,46 +10,20 @@ public final class ExecuteCommand extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
+        if (event.getAuthor().isBot()) return; // Strictly ignore any bot messages.
         String rawMessage = event.getMessage().getContentRaw();
-
-        // Check if the message starts with "!"
-        if (rawMessage.isEmpty() || rawMessage.charAt(0) != '!')
-            return;
-
-        String commandName = rawMessage.substring(1).split(" ", 2)[0];
-        if (RESERVED_COMMANDS.contains(commandName))
-            return;
-
-        try {
-            var command = JsonStructureLib.createReader().readFile("commands/" + commandName + ".json");
-            if (command != null && command.getString("name", "_null").equals(commandName)) {
-                String data = command.getString("data", "");
-                event.getChannel().sendMessage(data).queue();
-                return;
-            }
-        } catch (Exception e) {
-            // Ignore the exception, it means the file does not exist
+        if (rawMessage.isEmpty()) return;
+        String author = event.getAuthor().getName();
+        boolean silent = rawMessage.startsWith("s") || rawMessage.startsWith("S");
+        var context = CommandCache.getOrDefault(event.getAuthor().getName(), silent ? rawMessage.substring(1) : rawMessage);
+        if (context == CommandContext.NONE) {
+            return; // Was not a command
+        } else if (context == CommandContext.NOT_FOUND) {
+            event.getChannel().sendMessage("Command not found!").queue();
+        } else {
+            context.command().handle(event, author, context.additionalData());
+            if (silent) event.getMessage().delete().queue();
         }
-
-        try {
-            // If not found, check aliases
-            var files = new java.io.File("commands").listFiles((dir, name) -> name.endsWith(".json"));
-            if (files != null) {
-                for (var file : files) {
-                    var cmd = JsonStructureLib.createReader().readFile(file.getPath());
-                    var aliases = cmd.getStringArray("aliases");
-                    if (aliases.contains(commandName)) {
-                        String data = cmd.getString("data", "");
-                        event.getChannel().sendMessage(data).queue();
-                        return;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Ignore the exception
-        }
-
-        event.getChannel().sendMessage("Command not found!").queue();
 
 //        var command = JsonStructureLib.createReader().readFile("commands/" + event.getMessage().getContentRaw().substring(1).split(" ")[0] + ".json");
 //        if (command == null) {
