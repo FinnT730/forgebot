@@ -6,7 +6,8 @@ import java.util.*;
 
 public class CommandCache {
     private static final Map<String, Command> cache = new HashMap<>();
-    private static final String DEFAULT_PREFIX = "!";
+    public static final String DEFAULT_PREFIX = "!";
+    public static final String HOI4_ESP = "º";//In HOI4 they always use the key next to 1 no matter the layout.
 
     // Init reserved commands
     static {
@@ -19,7 +20,7 @@ public class CommandCache {
         // Parse out the actual command
         String actualCommand = null;
         String additionalData = null;
-        if (rawContent.startsWith(DEFAULT_PREFIX)) {
+        if (rawContent.startsWith(DEFAULT_PREFIX)||rawContent.startsWith(HOI4_ESP)) {
             var temp = rawContent.substring(1).split(" ");
             actualCommand = temp[0];
             additionalData = rawContent.substring(actualCommand.length() + 1).trim();
