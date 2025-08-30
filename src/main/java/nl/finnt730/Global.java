@@ -3,7 +3,10 @@ package nl.finnt730;
 import com.jsonstructure.JsonStructure;
 import haxe.root.JsonStructureLib;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.zip.GZIPOutputStream;
 
 public final class Global {
     private static final String COMMANDS_LOCATION = "commands/%s.json";
@@ -67,4 +70,18 @@ public final class Global {
     public static String commandOf(String cmdName) {
         return String.format(COMMANDS_LOCATION, cmdName);
     }
+
+	public static byte[] compressGZIP(byte[] contentBytes) {
+		// TODO Auto-generated method stub
+		try {
+			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+			GZIPOutputStream gzip = new GZIPOutputStream(buffer);
+				gzip.write(contentBytes);
+			return buffer.toByteArray();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return contentBytes;
+	}
 }
