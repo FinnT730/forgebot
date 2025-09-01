@@ -36,7 +36,7 @@ public class EchoCommand extends Command {
                 ).queue();
             }
         } else {
-            event.getChannel().sendMessage(echo).queue();
+            result.queue();
         }
     }
 }
