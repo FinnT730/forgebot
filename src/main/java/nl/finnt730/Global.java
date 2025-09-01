@@ -2,19 +2,27 @@ package nl.finnt730;
 
 import com.jsonstructure.JsonStructure;
 import haxe.root.JsonStructureLib;
+import net.dv8tion.jda.api.entities.Role;
 
 import java.util.ArrayList;
 
 public final class Global {
     private static final String COMMANDS_LOCATION = "commands/%s.json";
+    public static final String NAME_KEY = "name";
+    public static final String DESC_KEY = "description";
+    public static final String DATA_KEY = "data";
+    public static final String ALIAS_KEY = "aliases";
+    public static final String OPTION_KEY = "options";
+    public static final String MANAGER_ROLE = "Bot Manager";
+
     private Global() {}
 
     public static final JsonStructure COMMAND_STRUCTURE = JsonStructureLib.createStructure()
-            .addStringField("name")
-            .addOptionalStringField("description")
-            .addStringField("data")
-            .addOptionalArrayField("aliases", "string", JsonStructureLib.createStructure().addStringField("alias"))
-            .addOptionalArrayField("options", "object", JsonStructureLib.createStructure());
+            .addStringField(NAME_KEY)
+            .addOptionalStringField(DESC_KEY)
+            .addStringField(DATA_KEY)
+            .addOptionalArrayField(ALIAS_KEY, "string", JsonStructureLib.createStructure().addStringField("alias"))
+            .addOptionalArrayField(OPTION_KEY, "object", JsonStructureLib.createStructure());
 
     /**
      * Parse a string that may contain quoted arguments, handling spaces within quotes properly
@@ -67,4 +75,5 @@ public final class Global {
     public static String commandOf(String cmdName) {
         return String.format(COMMANDS_LOCATION, cmdName);
     }
+    public static boolean isManager(Role role) {return role.getName().equals(MANAGER_ROLE);}
 }

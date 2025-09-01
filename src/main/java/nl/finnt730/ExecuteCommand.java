@@ -1,5 +1,7 @@
 package nl.finnt730;
 
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -13,14 +15,16 @@ public final class ExecuteCommand extends ListenerAdapter {
         if (event.getAuthor().isBot()) return; // Strictly ignore any bot messages.
         String rawMessage = event.getMessage().getContentRaw();
         if (rawMessage.isEmpty()) return;
-        String author = event.getAuthor().getName();
+        Member author = event.getMember();
         boolean silent = rawMessage.startsWith("s") || rawMessage.startsWith("S");
-        var context = CommandCache.getOrDefault(event.getAuthor().getName(), silent ? rawMessage.substring(1) : rawMessage);
+        var context = CommandCache.getOrDefault(author, silent ? rawMessage.substring(1) : rawMessage);
         if (context == CommandContext.NONE) {
-            return; // Was not a command
+            return; // Was not a command attempt
         } else if (context == CommandContext.NOT_FOUND) {
             event.getChannel().sendMessage("Command not found!").queue();
         } else {
+            if (!context.command().canInvoke(event.getGuild(), author)) return;
+            // Silently deny if user does not have permission. Up for discussion.
             context.command().handle(event, author, context.additionalData());
             if (silent) event.getMessage().delete().queue();
         }

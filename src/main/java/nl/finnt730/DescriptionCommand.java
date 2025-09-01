@@ -2,6 +2,8 @@ package nl.finnt730;
 
 import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.util.Objects;
@@ -10,7 +12,7 @@ public final class DescriptionCommand extends ReservedCommand {
     private static final String USAGE_HINT = "Usage: !description <command_name> \"<new_description>\"";
 
     @Override
-    public void handle(MessageReceivedEvent event, String invoker, String additionalData) {
+    public void handle(MessageReceivedEvent event, Member invoker, String additionalData) {
         String[] split = additionalData.split(" ", 2);
         if (split.length < 2) {
             event.getChannel().sendMessage(USAGE_HINT).queue();
