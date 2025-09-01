@@ -1,19 +1,13 @@
 package nl.finnt730;
 
 import com.jsonstructure.DynamicJson;
-import com.jsonstructure.JsonStructure;
 import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
-import java.io.File;
-import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Random;
 
 public final class Main {
     public static void main(String[] args) {

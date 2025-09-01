@@ -2,14 +2,12 @@ package nl.finnt730;
 
 import haxe.root.Array;
 import haxe.root.JsonStructureLib;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.io.File;
 
 import static nl.finnt730.Global.ALIAS_KEY;
-import static nl.finnt730.Global.NAME_KEY;
 
 public final class DeleteCommand extends ReservedCommand {
     private static final String USAGE_HINT = "Usage: !delete <command_name>";

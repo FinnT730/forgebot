@@ -2,7 +2,6 @@ package nl.finnt730;
 
 import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 

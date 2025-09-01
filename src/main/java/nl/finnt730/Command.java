@@ -9,7 +9,6 @@ public abstract class Command {
 
     /**
      * Handles whatever action a command should perform
-     * @param event
      * @param invoker username of the person who invoked the command
      * @param commandContents contents of invoking message AFTER the command name. "!java boots" will have the contents of "boots"
      */
