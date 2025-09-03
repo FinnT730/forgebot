@@ -4,39 +4,45 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
+import java.util.List;
+import java.util.Locale;
+
 public class EchoCommand extends Command {
     private final String echo;
+    private static int TRIAGE_AUTHORITY_LEVEL = -1;
     public EchoCommand(String echo) { this.echo = echo;}
 
     @Override
     public void handle(MessageReceivedEvent event, Member invoker, String commandContents) {
         var result = event.getChannel().sendMessage(echo);
         var target = event.getMessage().getReferencedMessage();
+        if (TRIAGE_AUTHORITY_LEVEL == -1) {
+            var guildRoles = event.getGuild().getRoles();
+            for (Role guildRole : guildRoles) {
+                if (guildRole.getName().toLowerCase(Locale.ROOT).startsWith("triage")) {
+                    TRIAGE_AUTHORITY_LEVEL = guildRole.getPosition();
+                    break;
+                }
+            }
+        }
         // if is replying to a TARGET MESSAGE
         if (target != null  && target.getMember() != null) {
-            var targetRoles = target.getMember().getRoles();
-            // This is not elegant but it does the job.
-            boolean targetIsHoisted = targetRoles.stream().anyMatch(Role::isHoisted);
-            boolean invokerIsHoisted = invoker.getRoles().stream().anyMatch(Role::isHoisted);
-            boolean invokerIsManager = invoker.getRoles().stream().anyMatch(Global::isManager);
-            boolean targetIsManager = targetRoles.stream().anyMatch(Global::isManager);
-            // Logic:
-            /*
-            * 1. Both are hoisted = Don't even reply (e.g. Admin to Admin)
-            * 2. Target is hoisted, Invoker is not hoisted = Don't even reply (e.g. BillyBob to Admin)
-            * 3. Target is not hoisted, Invoker is hoisted = Reply ping unless target is Bot Manager (e.g. Admin to BillyBob)
-            * 4. Both are not hoisted = Reply ping if invoker has manager (e.g. BillyBob to BillyBob)
-            * */
-            if (targetIsHoisted) {
-                result.queue(); // Case 1 & 2
-            } else {
-                result.setMessageReference(target).mentionRepliedUser(
-                        (invokerIsHoisted && !targetIsManager) || // Case 3
-                        (invokerIsManager && !invokerIsHoisted) // Case 4
-                ).queue();
+            int targetAuthority = highest(target.getMember().getRoles());
+            if (targetAuthority >= TRIAGE_AUTHORITY_LEVEL) {
+                result.queue(); // Don't reply to triage or higher.
+            } else { // Always reply and ping those who aren't at least triage.
+                result.setMessageReference(target).mentionRepliedUser(true).queue();
             }
         } else {
             result.queue();
         }
+    }
+
+    private int highest(List<Role> roles) {
+        int i = -1;
+        for (Role role : roles) {
+            i = Math.max(role.getPosition(), i);
+        }
+        return i;
     }
 }
