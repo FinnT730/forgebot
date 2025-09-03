@@ -2,22 +2,22 @@ package nl.finnt730;
 
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public final class PasteCommand extends ListenerAdapter {
@@ -26,6 +26,10 @@ public final class PasteCommand extends ListenerAdapter {
     private static final String NOTEBOOK_EMOJI = "📓";
     private static final Emoji NOTEBOOK_EMOJI_OBJ = Emoji.fromUnicode(NOTEBOOK_EMOJI);
     private static final int MAX_MESSAGE_LENGTH = 700;
+    private static final List<String> BLACKLISTED_EXTENSIONS = List.of("zip", "gz", "7z"); // if there are others add them, idk why discord doesn't just have isText
+
+    private static final String ERROR_RESPONSE_FORMAT = "Unable to create paste for %s\n";
+    private static final String PASTE_RESPONSE_FORMAT = "%s: [Paste](<%s>) | [Raw](<%s>)\n";
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
@@ -40,7 +44,7 @@ public final class PasteCommand extends ListenerAdapter {
       
         if (content.length() > MAX_MESSAGE_LENGTH || !attachments.isEmpty()) {
             // Add notebook emoji to the message
-            if (attachments.stream().noneMatch(it -> it.isImage() || it.isVideo())) {
+            if (attachments.stream().anyMatch(PasteCommand::isPasteable)) {
                 message.addReaction(NOTEBOOK_EMOJI_OBJ).queue();
             }
         }
@@ -61,124 +65,127 @@ public final class PasteCommand extends ListenerAdapter {
                 if (message.getReactions().stream().anyMatch(MessageReaction::isSelf)) {
                     message.clearReactions().queue();
                     var attachments = message.getAttachments();
-                    if (!attachments.isEmpty() && attachments.stream().noneMatch(it -> it.isImage() || it.isVideo())) {
-                        try {
-                            URL url = new URL(attachments.getFirst().getUrl());
-                            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                            connection.setRequestMethod("GET");
+                    List<String> attachmentContent = new ArrayList<>();
+                    List<String> fileNames = new ArrayList<>();
+                    for (Message.Attachment attachment : attachments) {
+                        if (isPasteable(attachment)) {
+                            try {
+                                URL url = new URL(attachment.getUrl());
+                                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                                connection.setRequestMethod("GET");
 
-                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                                StringBuilder content = new StringBuilder(10_000);
-                                String line;
-                                while ((line = reader.readLine()) != null) {
-                                    content.append(line).append("\n");
+                                try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                                    StringBuilder content = new StringBuilder(10_000);
+                                    String line;
+                                    while ((line = reader.readLine()) != null) {
+                                        content.append(line).append("\n");
+                                    }
+                                    // Create paste with attachment content
+                                    attachmentContent.add(content.toString());
+                                    fileNames.add(attachment.getFileName());
+
                                 }
-                                // Create paste with attachment content
-                                createPaste(content.toString(), event.getChannel(), message);
+                            } catch (Exception e) {
+                                event.getChannel().sendMessage("❌ Error reading attachment: " + e.getMessage()).queue();
                             }
-                        } catch (Exception e) {
-                            event.getChannel().sendMessage("❌ Error reading attachment: " + e.getMessage()).queue();
                         }
-                    } else {
-                        // Use message content if no attachments
-                        String content = message.getContentRaw();
-                        createPaste(content, event.getChannel(), message);
                     }
+                    createPaste(attachmentContent, event.getChannel(), message, fileNames);
                 }
             });
         }
     }
 
-    private static void createPaste(String content, net.dv8tion.jda.api.entities.channel.middleman.MessageChannel channel, Message message) {
+    private static void createPaste(List<String> contentList, MessageChannel channel, Message message, List<String> fileName) {
         CompletableFuture.runAsync(() -> {
-            try {
-                // Prepare the POST data
-                String postData = "content=" + URLEncoder.encode(content, StandardCharsets.UTF_8);
-                byte[] postDataBytes = postData.getBytes(StandardCharsets.UTF_8);
-
-                // Create connection
-                URL url = new URL(MCLO_API_URL);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("POST");
-                connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                connection.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
-                connection.setDoOutput(true);
-
-                // Send the data
-                try (OutputStream os = connection.getOutputStream()) {
-                    os.write(postDataBytes);
+            StringBuilder pasteResponse = new StringBuilder();
+            for (int i = 0; i < contentList.size(); i++) {
+                try {
+                    String rawResponse = tryGetResponse(contentList.get(i));
+                    String pasteLinks = tryFormatLinks(rawResponse, fileName.get(i));
+                    pasteResponse.append(pasteLinks);
+                } catch (IOException e) {
+                    pasteResponse.append(String.format(ERROR_RESPONSE_FORMAT, fileName.get(i)));
                 }
-
-                // Read the response
-                StringBuilder response = new StringBuilder();
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        response.append(line);
-                    }
-                }
-
-                 // Parse the response (simple JSON parsing for the URL)
-                 String responseStr = response.toString();
-                 if (responseStr.contains("\"success\":true")) {
-                     // Extract the URLs from the response
-                     String pasteUrl = extractUrlFromResponse(responseStr);
-                     String rawUrl = extractRawUrlFromResponse(responseStr);
-                     if (pasteUrl != null && rawUrl != null) {
-                         String sentContent = "[Paste](<%s>) | [Raw](<%s>)".formatted(
-                                 pasteUrl.replace("\\", ""), rawUrl.replace("\\", ""));
-                         channel.sendMessage(sentContent)
-                                 .setMessageReference(message)
-                                 .mentionRepliedUser(false)
-                                 .queue();
-                     } else {
-                         channel.sendMessage("❌ Failed to create paste: Could not extract URLs from response.")
-                                 .setMessageReference(message)
-                                 .mentionRepliedUser(false)
-                                 .queue();
-                     }
-                 } else {
-                     channel.sendMessage("❌ Failed to create paste: " + responseStr)
-                             .setMessageReference(message)
-                             .mentionRepliedUser(false)
-                             .queue();
-                 }
-
-            } catch (Exception e) {
-                channel.sendMessage("❌ Error creating paste: " + e.getMessage())
-                        .setMessageReference(message)
-                        .mentionRepliedUser(false)
-                        .queue();
-                e.printStackTrace();
             }
+            channel.sendMessage(pasteResponse.toString()).queue();
         });
     }
+    private static String tryFormatLinks(String rawContent, String fileName) throws IOException {
+        if (rawContent.contains("\"success\":true")) {
+            // Extract the URLs from the response
+            String pasteUrl = extractUrlFromResponse(rawContent);
+            String rawUrl = extractRawUrlFromResponse(rawContent);
+            if (pasteUrl != null && rawUrl != null) {
+                return PASTE_RESPONSE_FORMAT.formatted(
+                        fileName, pasteUrl.replace("\\", ""),
+                        rawUrl.replace("\\", ""));
+            } else {
+                throw new IOException(); // me when i do exception based control flow
+            }
+        } else {
+            throw new IOException();
+        }
+    }
+    private static String tryGetResponse(String content) throws IOException {
+        // Prepare the POST data
+        String postData = "content=" + URLEncoder.encode(content, StandardCharsets.UTF_8);
+        byte[] postDataBytes = postData.getBytes(StandardCharsets.UTF_8);
 
-     private static String extractUrlFromResponse(String response) {
-         // Simple JSON parsing to extract the URL
-         // Looking for "url":"https://mclo.gs/..."
-         int urlIndex = response.indexOf("\"url\":\"");
-         if (urlIndex != -1) {
-             urlIndex += 7; // Skip "url":"
-             int endIndex = response.indexOf("\"", urlIndex);
-             if (endIndex != -1) {
-                 return response.substring(urlIndex, endIndex);
-             }
-         }
-         return null;
-     }
+        // Create connection
+        URL url = new URL(MCLO_API_URL);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        connection.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
+        connection.setDoOutput(true);
 
-     private static String extractRawUrlFromResponse(String response) {
-         // Simple JSON parsing to extract the raw URL
-         // Looking for "raw":"https://api.mclo.gs/1/raw/..."
-         int rawIndex = response.indexOf("\"raw\":\"");
-         if (rawIndex != -1) {
-             rawIndex += 7; // Skip "raw":"
-             int endIndex = response.indexOf("\"", rawIndex);
-             if (endIndex != -1) {
-                 return response.substring(rawIndex, endIndex);
-             }
+        // Send the data
+        try (OutputStream os = connection.getOutputStream()) {
+            os.write(postDataBytes);
+        }
+
+        // Read the response
+        StringBuilder response = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                response.append(line);
+            }
+        }
+        return response.toString();
+    }
+
+    private static String extractUrlFromResponse(String response) {
+     // Simple JSON parsing to extract the URL
+     // Looking for "url":"https://mclo.gs/..."
+     int urlIndex = response.indexOf("\"url\":\"");
+     if (urlIndex != -1) {
+         urlIndex += 7; // Skip "url":"
+         int endIndex = response.indexOf("\"", urlIndex);
+         if (endIndex != -1) {
+             return response.substring(urlIndex, endIndex);
          }
-         return null;
      }
+     return null;
+    }
+
+    private static String extractRawUrlFromResponse(String response) {
+     // Simple JSON parsing to extract the raw URL
+     // Looking for "raw":"https://api.mclo.gs/1/raw/..."
+     int rawIndex = response.indexOf("\"raw\":\"");
+     if (rawIndex != -1) {
+         rawIndex += 7; // Skip "raw":"
+         int endIndex = response.indexOf("\"", rawIndex);
+         if (endIndex != -1) {
+             return response.substring(rawIndex, endIndex);
+         }
+     }
+     return null;
+    }
+
+    private static boolean isPasteable(Message.Attachment attachment) {
+        if (attachment.isVideo() || attachment.isImage()) return false;
+        return !BLACKLISTED_EXTENSIONS.contains(attachment.getFileExtension());
+    }
 }
