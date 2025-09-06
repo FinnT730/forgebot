@@ -1,16 +1,23 @@
 package nl.finnt730;
 
+import static nl.finnt730.Global.ALIAS_KEY;
+import static nl.finnt730.Global.DATA_KEY;
+import static nl.finnt730.Global.NAME_KEY;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
 import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.entities.Member;
 
-import java.io.File;
-import java.util.*;
-
-import static nl.finnt730.Global.*;
-
 public class CommandCache {
     private static final Map<String, Command> cache = new HashMap<>();
-    private static final String DEFAULT_PREFIX = "!";
+    public static final String DEFAULT_PREFIX = "!";
+    public static final String HOI4_ESP = "º";//In HOI4 they always use the key next to 1 no matter the layout.
     private static final Set<String> realCommands = new HashSet<>();
     // Mark what is a taken alias so we don't overlap a command name with an alias.
     // Is okay if it's wiped per reboot since it'll build itself as needed.
@@ -21,13 +28,13 @@ public class CommandCache {
         cache.put("register", new RegisterNewCommand());
         cache.put("alias", new AliasCommand());
         cache.put("delete", new DeleteCommand());
+        cache.put("pastesite", new PasteSiteCommand());
         cache.put("description", new DescriptionCommand());
     }
     public static CommandContext getOrDefault(Member user, String rawContent) {
         String actualCommand = null; // String command name, e.g. "register" or "optifine"
         String additionalData = null; // Remainder of message
-        if (rawContent.startsWith(DEFAULT_PREFIX)) {
-            var temp = rawContent.substring(1).split(" ");
+        if (rawContent.startsWith(DEFAULT_PREFIX)||rawContent.startsWith(HOI4_ESP)) {            var temp = rawContent.substring(1).split(" ");
             actualCommand = temp[0];
             additionalData = rawContent.substring(actualCommand.length() + 1).trim();
         }

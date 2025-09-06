@@ -1,10 +1,14 @@
 package nl.finnt730;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.zip.GZIPOutputStream;
+
 import com.jsonstructure.JsonStructure;
+
 import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.entities.Role;
-
-import java.util.ArrayList;
 
 public final class Global {
     private static final String COMMANDS_LOCATION = "commands/%s.json";
@@ -76,4 +80,14 @@ public final class Global {
         return String.format(COMMANDS_LOCATION, cmdName);
     }
     public static boolean isManager(Role role) {return role.getName().equals(MANAGER_ROLE);}
+    
+    public static byte[] compressGZIP(byte[] data) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (GZIPOutputStream gos = new GZIPOutputStream(baos)) {
+            gos.write(data);
+        } // <--- closing ensures trailer is written
+        return baos.toByteArray();
+    }
+    
+    
 }
