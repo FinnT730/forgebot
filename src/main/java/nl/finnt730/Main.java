@@ -12,9 +12,23 @@ import java.util.EnumSet;
 public final class Main {
     public static void main(String[] args) {
         try {
+            // Initialize database and migrate existing commands
+            System.out.println("Initializing database...");
+            DatabaseManager.getInstance(); // This will create the database and load cache
+            
+            // Migrate existing JSON commands to database (only if they exist)
+            System.out.println("Migrating existing commands...");
+            CommandMigrator.migrateAllCommands();
+            
+            // Migrate user database
+            System.out.println("Migrating user database...");
+            CommandMigrator.migrateUserDatabase();
+            
+            // Load environment configuration
             DynamicJson json = JsonStructureLib.createReader().readFile("env.json");
             String botToken = json.getString("botToken", "");
 
+            System.out.println("Starting Discord bot...");
             JDABuilder.createLight(botToken, EnumSet.of(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGE_POLLS, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGE_REACTIONS))
                     .addEventListeners(new ExecuteCommand())
                     .addEventListeners(new PasteCommand())

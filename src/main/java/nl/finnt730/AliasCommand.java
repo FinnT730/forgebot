@@ -1,11 +1,10 @@
 package nl.finnt730;
 
-import haxe.root.Array;
-import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-import static nl.finnt730.Global.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class AliasCommand extends ReservedCommand {
     private static final String USAGE_HINT = "Usage: !alias <existing_command> <new_alias1> <new_alias2>...";
@@ -25,29 +24,27 @@ public final class AliasCommand extends ReservedCommand {
         }
         int added = 0;
         try {
-            // File is arbiter of truth so I guess it's fine to do IO every time.
-            var command = JsonStructureLib.createReader().readFile(Global.commandOf(existingCommandName));
-            Array<String> aliases = command.getStringArray("aliases");
+            DatabaseManager dbManager = DatabaseManager.getInstance();
+            var commandData = dbManager.getCommand(existingCommandName);
+            if (commandData.isEmpty()) {
+                event.getChannel().sendMessage("Command " + existingCommandName + " not found!").queue();
+                return;
+            }
+            
+            List<String> newAliases = new ArrayList<>();
             for (int i = 1; i < parts.length; i++) {
                 String alias = parts[i];
-                if (aliases.contains(alias) || CommandCache.isTakenAlias(alias)) continue;
-                aliases.push(alias);
+                if (commandData.get().aliases().contains(alias) || CommandCache.isTakenAlias(alias)) continue;
+                newAliases.add(alias);
                 added++;
             }
-            var builder = JsonStructureLib.createObjectBuilder();
-            var updatedCommand = builder
-                    .addStringField(NAME_KEY, command.getString(NAME_KEY, ""))
-                    .addStringField(DESC_KEY, command.getString(DESC_KEY, ""))
-                    .addStringField(DATA_KEY, command.getString(DATA_KEY, ""))
-                    .addStringArrayField(ALIAS_KEY, aliases)
-                    .build();
-
-            JsonStructureLib.writeJsonFile(updatedCommand, Global.commandOf(existingCommandName), null);
-            var iter = aliases.iterator();
-            while (iter.hasNext()) {
-                CommandCache.addObservedAlias(iter.next());
+            
+            if (added > 0) {
+                dbManager.addAliases(existingCommandName, newAliases);
+                event.getChannel().sendMessage("Added " + added + " aliases to command " + existingCommandName + "!").queue();
+            } else {
+                event.getChannel().sendMessage("No new aliases were added (they may already exist or be taken).").queue();
             }
-            event.getChannel().sendMessage("Added " + added + " aliases to command " + existingCommandName + "!").queue();
         } catch (Exception ex) {
             event.getChannel().sendMessage("Something went wrong while trying to add aliases. Try again.").queue();
         }

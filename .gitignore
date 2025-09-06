@@ -42,3 +42,4 @@ bin/
 .DS_Store
 /env.json
 userdb.json
+/commands
