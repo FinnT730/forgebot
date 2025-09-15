@@ -1,6 +1,9 @@
-package nl.finnt730;
+package nl.finnt730.commands;
 
 import haxe.root.JsonStructureLib;
+import nl.finnt730.DatabaseManager;
+import nl.finnt730.Global;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,7 +1,9 @@
-package nl.finnt730;
+package nl.finnt730.commands.builtin.reserved;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import nl.finnt730.DatabaseManager;
+import nl.finnt730.commands.CommandCache;
 
 public final class DeleteCommand extends ReservedCommand {
     private static final String USAGE_HINT = "Usage: !delete <command_name>";

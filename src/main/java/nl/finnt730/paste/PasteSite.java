@@ -70,7 +70,7 @@ public interface PasteSite {
         
         String getAvailableSites() {
             return sitesById.values().stream()
-                .map(site -> "`" + site.getId())
+                .map(site -> "`" + site.getId() + "`")
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("No paste sites available");
         }

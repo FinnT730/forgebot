@@ -1,8 +1,9 @@
-package nl.finnt730;
+package nl.finnt730.commands.builtin.reserved;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import nl.finnt730.DatabaseManager;
 
 import java.util.Objects;
 

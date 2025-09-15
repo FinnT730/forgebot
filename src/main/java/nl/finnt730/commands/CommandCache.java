@@ -1,10 +1,19 @@
-package nl.finnt730;
+package nl.finnt730.commands;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import net.dv8tion.jda.api.entities.Member;
+import nl.finnt730.DatabaseManager;
+import nl.finnt730.commands.builtin.EchoCommand;
+import nl.finnt730.commands.builtin.FindCommand;
+import nl.finnt730.commands.builtin.PasteSiteCommand;
+import nl.finnt730.commands.builtin.reserved.AliasCommand;
+import nl.finnt730.commands.builtin.reserved.DeleteCommand;
+import nl.finnt730.commands.builtin.reserved.DescriptionCommand;
+import nl.finnt730.commands.builtin.reserved.RegisterNewCommand;
 
 public class CommandCache {
     private static final Map<String, Command> cache = new HashMap<>();
@@ -12,20 +21,22 @@ public class CommandCache {
     public static final String HOI4_ESP = "º";//In HOI4 they always use the key next to 1 no matter the layout.
     private static final DatabaseManager dbManager = DatabaseManager.getInstance();
 
-    // Init reserved commands
+    // Init builtin commands
     static {
         cache.put("register", new RegisterNewCommand());
         cache.put("alias", new AliasCommand());
         cache.put("delete", new DeleteCommand());
         cache.put("pastesite", new PasteSiteCommand());
         cache.put("description", new DescriptionCommand());
+        cache.put("find", new FindCommand());
     }
     public static CommandContext getOrDefault(Member user, String rawContent) {
         String actualCommand = null; // String command name, e.g. "register" or "optifine"
         String additionalData = null; // Remainder of message
-        if (rawContent.startsWith(DEFAULT_PREFIX)||rawContent.startsWith(HOI4_ESP)) {            var temp = rawContent.substring(1).split(" ");
+        if (rawContent.startsWith(DEFAULT_PREFIX)||rawContent.startsWith(HOI4_ESP)) {
+            var temp = rawContent.substring(1).split(" ", 2);
             actualCommand = temp[0];
-            additionalData = rawContent.substring(actualCommand.length() + 1).trim();
+            additionalData = temp.length > 1 ? temp[1] : "";
         }
 
         if (actualCommand == null) return CommandContext.NONE;
@@ -79,6 +90,10 @@ public class CommandCache {
 
     public static void addObservedAlias(String name) {
         dbManager.addObservedAlias(name);
+    }
+
+    public static Set<String> getAllLoadedNames() {
+        return cache.keySet();
     }
 
     public static Optional<CommandContext> existsAsAlias(String aliasName) {
