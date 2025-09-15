@@ -1,9 +1,9 @@
-package nl.finnt730;
+package nl.finnt730.commands.builtin.reserved;
 
-import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import nl.finnt730.DatabaseManager;
 
 import java.util.Objects;
 
@@ -27,36 +27,20 @@ public final class DescriptionCommand extends ReservedCommand {
         }
 
         try {
-            // Check if the command exists
-            var commandFile = JsonStructureLib.createReader().readFile(Global.commandOf(command));
-            if (commandFile == null) {
-                event.getChannel().sendMessage("Command `" + command + "` not found!").queue();
-                return;
-            }
-
-            // Verify the command name matches
-            String actualName = commandFile.getString("name", "");
-            if (!actualName.equals(command)) {
+            DatabaseManager dbManager = DatabaseManager.getInstance();
+            var commandData = dbManager.getCommand(command);
+            if (commandData.isEmpty()) {
                 event.getChannel().sendMessage("Command `" + command + "` not found!").queue();
                 return;
             }
 
             // Get the old description for confirmation
-            String oldDescription = commandFile.getString("description", "No description");
-            String data = commandFile.getString("data", "");
-            var aliases = commandFile.getStringArray("aliases");
+            String oldDescription = commandData.get().description();
+            String data = commandData.get().data();
+            var aliases = commandData.get().aliases();
 
-            // Create updated command object
-            var builder = JsonStructureLib.createObjectBuilder();
-            var updatedCommandObject = builder
-                    .addStringField("name", command)
-                    .addStringField("description", messageContent)
-                    .addStringField("data", data)
-                    .addStringArrayField("aliases", aliases)
-                    .build();
-
-            // Write the updated command back to file
-            JsonStructureLib.writeJsonFile(updatedCommandObject, Global.commandOf(command), Global.COMMAND_STRUCTURE);
+            // Update the command in database
+            dbManager.updateCommand(command, messageContent, data, aliases);
 
             event.getChannel().sendMessage("Updated description for `" + command + "`!\n" +
                     "**Old description:** " + oldDescription + "\n" +

@@ -1,4 +1,4 @@
-package nl.finnt730;
+package nl.finnt730.commands;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;

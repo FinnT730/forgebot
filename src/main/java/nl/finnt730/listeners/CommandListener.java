@@ -1,12 +1,14 @@
-package nl.finnt730;
+package nl.finnt730.listeners;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import nl.finnt730.commands.CommandCache;
+import nl.finnt730.commands.CommandContext;
 
 import java.util.Set;
 
-public final class ExecuteCommand extends ListenerAdapter {
+public final class CommandListener extends ListenerAdapter {
     private static final Set<String> RESERVED_COMMANDS = Set.of("register", "alias", "delete", "description");
 
     @Override

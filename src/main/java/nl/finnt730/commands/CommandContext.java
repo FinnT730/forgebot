@@ -1,4 +1,4 @@
-package nl.finnt730;
+package nl.finnt730.commands;
 
 public record CommandContext(Command command, String additionalData) {
     public static final CommandContext NONE = new CommandContext(null, null);

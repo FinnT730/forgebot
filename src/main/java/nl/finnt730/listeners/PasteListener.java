@@ -1,4 +1,4 @@
-package nl.finnt730;
+package nl.finnt730.listeners;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -17,7 +17,7 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import nl.finnt730.paste.PasteSite;
 
-public final class PasteCommand extends ListenerAdapter {
+public final class PasteListener extends ListenerAdapter {
 
     private static final String NOTEBOOK_EMOJI = "📓";
     private static final Emoji NOTEBOOK_EMOJI_OBJ = Emoji.fromUnicode(NOTEBOOK_EMOJI);
@@ -40,7 +40,7 @@ public final class PasteCommand extends ListenerAdapter {
       
         if (content.length() > MAX_MESSAGE_LENGTH || !attachments.isEmpty()) {
             // Add notebook emoji to the message
-            if (attachments.stream().anyMatch(PasteCommand::isPasteable)) {
+            if (attachments.stream().anyMatch(PasteListener::isPasteable)) {
                 message.addReaction(NOTEBOOK_EMOJI_OBJ).queue();
             }
         }
