@@ -29,6 +29,11 @@ dependencies {
         // exclude(module="opus-java") // required for encoding audio into opus, not needed if audio is already provided in opus encoding
         // exclude(module="tink") // required for encrypting and decrypting audio
     }
+    
+    // Logging dependencies
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.14'
+    implementation 'ch.qos.logback:logback-core:1.4.14'
 
 }
 

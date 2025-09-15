@@ -1,5 +1,8 @@
 package nl.finnt730;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Database manager for handling SQLite operations with caching
  */
 public class DatabaseManager {
+    private static final Logger logger = LoggerFactory.getLogger("nl.finnt730.database");
     private static final String DB_URL = "jdbc:sqlite:prod.db";
     private static final String CREATE_COMMANDS_TABLE = """
         CREATE TABLE IF NOT EXISTS commands (
@@ -65,19 +69,28 @@ public class DatabaseManager {
     }
     
     private void initializeDatabase() {
+        logger.info("Initializing database connection to: {}", DB_URL);
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
+            logger.info("Database connection established successfully");
             try (Statement stmt = conn.createStatement()) {
+                logger.debug("Creating commands table...");
                 stmt.execute(CREATE_COMMANDS_TABLE);
+                logger.debug("Creating aliases table...");
                 stmt.execute(CREATE_ALIASES_TABLE);
+                logger.debug("Creating users table...");
                 stmt.execute(CREATE_USERS_TABLE);
+                logger.debug("Creating database indexes...");
                 stmt.execute(CREATE_INDEXES);
+                logger.info("Database tables and indexes created successfully");
             }
         } catch (SQLException e) {
+            logger.error("Failed to initialize database", e);
             throw new RuntimeException("Failed to initialize database", e);
         }
     }
     
     private void loadAllCommandsIntoCache() {
+        logger.info("Loading commands into cache from database...");
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
             String sql = """
                 SELECT c.id, c.name, c.description, c.data, 
@@ -90,6 +103,7 @@ public class DatabaseManager {
             try (PreparedStatement stmt = conn.prepareStatement(sql);
                  ResultSet rs = stmt.executeQuery()) {
                 
+                int commandCount = 0;
                 while (rs.next()) {
                     String name = rs.getString("name");
                     String description = rs.getString("description");
@@ -110,9 +124,12 @@ public class DatabaseManager {
                         aliasToCommandCache.put(alias, name);
                         observedAliases.add(alias);
                     }
+                    commandCount++;
                 }
+                logger.info("Successfully loaded {} commands into cache", commandCount);
             }
         } catch (SQLException e) {
+            logger.error("Failed to load commands into cache", e);
             throw new RuntimeException("Failed to load commands into cache", e);
         }
     }
@@ -142,11 +159,13 @@ public class DatabaseManager {
     }
     
     public void createCommand(String name, String description, String data, List<String> aliases) {
+        logger.info("Creating new command: {} with {} aliases", name, aliases.size());
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
             conn.setAutoCommit(false);
             
             try {
                 // Insert command
+                logger.debug("Inserting command '{}' into database", name);
                 String insertCommandSql = "INSERT INTO commands (name, description, data) VALUES (?, ?, ?)";
                 try (PreparedStatement stmt = conn.prepareStatement(insertCommandSql)) {
                     stmt.setString(1, name);
@@ -162,6 +181,7 @@ public class DatabaseManager {
                      ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         commandId = rs.getLong(1);
+                        logger.debug("Retrieved command ID: {} for command '{}'", commandId, name);
                     } else {
                         throw new SQLException("Failed to get command ID");
                     }
@@ -169,6 +189,7 @@ public class DatabaseManager {
                 
                 // Insert aliases
                 if (!aliases.isEmpty()) {
+                    logger.debug("Inserting {} aliases for command '{}'", aliases.size(), name);
                     String insertAliasSql = "INSERT INTO aliases (command_id, alias) VALUES (?, ?)";
                     try (PreparedStatement aliasStmt = conn.prepareStatement(insertAliasSql)) {
                         for (String alias : aliases) {
@@ -181,6 +202,7 @@ public class DatabaseManager {
                 }
                 
                 conn.commit();
+                logger.info("Successfully created command '{}' with {} aliases", name, aliases.size());
                 
                 // Update cache
                 CommandData cmdData = new CommandData(name, description, data, new ArrayList<>(aliases));
@@ -193,14 +215,14 @@ public class DatabaseManager {
                 }
                 
             } catch (SQLException e) {
+                logger.error("SQL error during command creation, rolling back transaction", e);
                 conn.rollback();
                 throw e;
             } finally {
                 conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            System.err.println("SQL Error creating command '" + name + "': " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Failed to create command '{}'", name, e);
             throw new RuntimeException("Failed to create command", e);
         }
     }
@@ -346,23 +368,29 @@ public class DatabaseManager {
     
     // User management methods
     public String getUserPasteSite(String userId) {
+        logger.debug("Getting paste site for user: {}", userId);
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
             String sql = "SELECT paste_site FROM users WHERE user_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, userId);
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
-                        return rs.getString("paste_site");
+                        String pasteSite = rs.getString("paste_site");
+                        logger.debug("Found paste site '{}' for user: {}", pasteSite, userId);
+                        return pasteSite;
                     }
                 }
             }
         } catch (SQLException e) {
+            logger.error("Failed to get user paste site for user: {}", userId, e);
             throw new RuntimeException("Failed to get user paste site", e);
         }
+        logger.debug("No paste site found for user: {}, returning default", userId);
         return "mclogs"; // default
     }
     
     public void setUserPasteSite(String userId, String pasteSite) {
+        logger.info("Setting paste site '{}' for user: {}", pasteSite, userId);
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
             String sql = """
                 INSERT INTO users (user_id, paste_site) VALUES (?, ?)
@@ -373,9 +401,11 @@ public class DatabaseManager {
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, userId);
                 stmt.setString(2, pasteSite);
-                stmt.executeUpdate();
+                int rowsAffected = stmt.executeUpdate();
+                logger.debug("Updated paste site for user: {} (rows affected: {})", userId, rowsAffected);
             }
         } catch (SQLException e) {
+            logger.error("Failed to set user paste site for user: {}", userId, e);
             throw new RuntimeException("Failed to set user paste site", e);
         }
     }
