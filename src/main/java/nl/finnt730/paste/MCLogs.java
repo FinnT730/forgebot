@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Common Minecraft Logging site owned by Aternos. Used by Aternos, Prism Launcher, Crash Assistant, CrashDetector, NotEnoughCrashes, Luna Pixel Studios and many others.
  */
-public sealed class MCLogs implements PasteSite permits GnomeBotPaste {
+public sealed class MCLogs implements PasteSite permits GnomeBotPaste,CAPaste {
 
     private static final String API_URL = "https://api.mclo.gs/1/log";
     private static final int MAX_LINES = 25000;
@@ -39,7 +39,7 @@ public sealed class MCLogs implements PasteSite permits GnomeBotPaste {
     }
 
     @Override
-    public String getResultURL(String content) {
+    public String getResultURL(String content) throws java.io.IOException {
         try {
             
             // Prepare the POST data
@@ -64,7 +64,7 @@ public sealed class MCLogs implements PasteSite permits GnomeBotPaste {
             // Check response code
             int responseCode = connection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
-                return null;
+                throw new java.io.IOException("HTTP " + responseCode);
             }
             
             // Read the response
@@ -88,11 +88,8 @@ public sealed class MCLogs implements PasteSite permits GnomeBotPaste {
                 }
             }
             
-            return null; // Failed to extract URL
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+            throw new java.io.IOException("Failed to extract URL from response");
+        } catch (java.io.IOException e) { throw e; } catch (Exception e) { throw new java.io.IOException(e); }
     }
 
 	@Override
