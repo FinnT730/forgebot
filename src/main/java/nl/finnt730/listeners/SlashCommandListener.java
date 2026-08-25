@@ -1,14 +1,18 @@
 package nl.finnt730.listeners;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import nl.finnt730.DatabaseManager;
+import nl.finnt730.Global;
 import nl.finnt730.UserDB;
+import nl.finnt730.commands.CommandCache;
 import nl.finnt730.paste.PasteReader;
 import nl.finnt730.paste.PasteSite;
 import org.slf4j.Logger;
@@ -25,22 +29,20 @@ public class SlashCommandListener extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger("nl.finnt730.slashcommands");
     private static final Set<String> PASTE_SITES = Set.of("mclogs", "gnomebot", "capaste", "cdpaste", "mmd", "pastesdev");
     private static final Set<String> MCLOGS_INSTANCES = Set.of("mclogs", "gnomebot", "capaste");
+    private static final Set<String> MANAGED_COMMANDS = Set.of("register", "alias", "delete", "description");
+    private static final Map<String, String> AUTOCOMPLETE_OPTIONS = Map.of(
+            "exec", "trickname",
+            "alias", "command",
+            "delete", "name",
+            "description", "name",
+            "find", "target"
+    );
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         String name = event.getName();
-        Member member = event.getMember();
-        
-        if (Set.of("register", "alias", "delete", "description").contains(name)) {
-            boolean canInvoke = member.getRoles().stream().anyMatch(role -> role.isHoisted() || nl.finnt730.Global.isManager(role) || member.isOwner());
-            if (name.equals("description") && !member.hasPermission(net.dv8tion.jda.api.Permission.ADMINISTRATOR) && !member.hasPermission(net.dv8tion.jda.api.Permission.MANAGE_SERVER)) {
-                event.reply("You don't have permission to modify command descriptions!").setEphemeral(true).queue();
-                return;
-            }
-            if (!canInvoke) {
-                event.reply("You do not have permission to use this command.").setEphemeral(true).queue();
-                return;
-            }
+        if (MANAGED_COMMANDS.contains(name) && denyIfCannotManageTricks(event, name)) {
+            return;
         }
 
         switch (name) {
@@ -57,6 +59,43 @@ public class SlashCommandListener extends ListenerAdapter {
     }
 
     @Override
+    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent event) {
+        try {
+            String expectedOption = AUTOCOMPLETE_OPTIONS.get(event.getName());
+            if (expectedOption == null || !expectedOption.equals(event.getFocusedOption().getName())) {
+                event.replyChoices().queue();
+                return;
+            }
+            List<String> suggestions = CommandCache.suggestTrickNames(event.getFocusedOption().getValue(), 25);
+            event.replyChoiceStrings(suggestions).queue();
+        } catch (Exception e) {
+            logger.error("Autocomplete failed for /{}", event.getName(), e);
+            event.replyChoices().queue();
+        }
+    }
+
+    private boolean denyIfCannotManageTricks(SlashCommandInteractionEvent event, String name) {
+        Member member = event.getMember();
+        if (member == null) {
+            event.reply("This command can only be used in a server.").setEphemeral(true).queue();
+            return true;
+        }
+        boolean canInvoke = member.isOwner() || member.getRoles().stream()
+                .anyMatch(role -> role.isHoisted() || Global.isManager(role));
+        if (name.equals("description")
+                && !member.hasPermission(Permission.ADMINISTRATOR)
+                && !member.hasPermission(Permission.MANAGE_SERVER)) {
+            event.reply("You don't have permission to modify command descriptions!").setEphemeral(true).queue();
+            return true;
+        }
+        if (!canInvoke) {
+            event.reply("You do not have permission to use this command.").setEphemeral(true).queue();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void onMessageContextInteraction(MessageContextInteractionEvent event) {
         String name = event.getName(); // e.g., "Upload to mclogs"
         String siteId = name.replace("Upload to ", "").toLowerCase();
@@ -68,13 +107,10 @@ public class SlashCommandListener extends ListenerAdapter {
 
     private void handleExec(SlashCommandInteractionEvent event) {
         String trickName = event.getOption("trickname", OptionMapping::getAsString);
-        String args = event.getOption("args", "", OptionMapping::getAsString);
         Optional<DatabaseManager.CommandData> cmdData = DatabaseManager.getInstance().getCommand(trickName);
         if (cmdData.isEmpty()) cmdData = DatabaseManager.getInstance().getCommandByAlias(trickName);
         if (cmdData.isPresent()) {
-            String output = cmdData.get().data();
-            if (!args.isEmpty()) output += " " + args;
-            event.reply(output).queue();
+            event.reply(cmdData.get().data()).queue();
         } else {
             event.reply("Command not found!").setEphemeral(true).queue();
         }
@@ -100,7 +136,10 @@ public class SlashCommandListener extends ListenerAdapter {
             return;
         }
         var cmdData = DatabaseManager.getInstance().getCommand(commandName);
-        if (cmdData.isEmpty()) return;
+        if (cmdData.isEmpty()) {
+            event.reply("Command `" + commandName + "` not found!").setEphemeral(true).queue();
+            return;
+        }
         List<String> newAliases = new ArrayList<>();
         int added = 0;
         for (String alias : parts) {
@@ -119,15 +158,25 @@ public class SlashCommandListener extends ListenerAdapter {
 
     private void handleDelete(SlashCommandInteractionEvent event) {
         String commandName = event.getOption("name", OptionMapping::getAsString);
-        if (DatabaseManager.getInstance().commandExists(commandName)) {
-            var cmdData = DatabaseManager.getInstance().getCommand(commandName);
-            cmdData.ifPresent(data -> {
-                for (String alias : data.aliases()) DatabaseManager.getInstance().invalidateCache(alias);
-            });
-            DatabaseManager.getInstance().deleteCommand(commandName);
-            event.reply("Successfully deleted command `" + commandName + "`!").queue();
-        } else {
+        if (!CommandCache.existsIsReal(commandName)) {
             event.reply("Command `" + commandName + "` not found!").setEphemeral(true).queue();
+            return;
+        }
+        try {
+            DatabaseManager dbManager = DatabaseManager.getInstance();
+            var cmdData = dbManager.getCommand(commandName);
+            if (cmdData.isEmpty()) {
+                event.reply("Command `" + commandName + "` not found!").setEphemeral(true).queue();
+                return;
+            }
+            for (String alias : cmdData.get().aliases()) {
+                CommandCache.invalidateOnUpdate(alias);
+            }
+            CommandCache.invalidateOnUpdate(commandName);
+            dbManager.deleteCommand(commandName);
+            event.reply("Successfully deleted command `" + commandName + "`!").queue();
+        } catch (Exception e) {
+            event.reply("Error deleting command `" + commandName + "`: " + e.getMessage()).setEphemeral(true).queue();
         }
     }
 
@@ -156,7 +205,7 @@ public class SlashCommandListener extends ListenerAdapter {
     private void handleFind(SlashCommandInteractionEvent event) {
         String target = event.getOption("target", OptionMapping::getAsString);
         int page = event.getOption("page", 0, OptionMapping::getAsInt);
-        var keys = nl.finnt730.commands.CommandCache.getAllLoadedNames();
+        var keys = CommandCache.getAllLoadedNames();
         var result = keys.stream().filter(str -> {
             try { return str.matches(target) || str.contains(target); } 
             catch (Exception e) { return str.contains(target); }

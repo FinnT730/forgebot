@@ -22,6 +22,7 @@ import nl.finnt730.listeners.SelfDestructListener;
 import nl.finnt730.listeners.SlashCommandListener;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public final class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
@@ -75,27 +76,29 @@ public final class Main {
                     .enableCache(CacheFlag.ROLE_TAGS)
                     .setMemberCachePolicy(MemberCachePolicy.ALL) // Would do ONLINE but I don't think that will work if you aren't literally set to Online status.
                     .build();
-                    
+
+            discordLogger.info("Waiting for Discord gateway...");
+            jda.awaitReady();
+            discordLogger.info("JDA connected, registering application commands...");
             jda.updateCommands()
                 .addCommands(
                     Commands.slash("exec", "Execute a custom command/trick")
-                        .addOption(OptionType.STRING, "trickname", "The name of the trick", true)
-                        .addOption(OptionType.STRING, "args", "Optional arguments", false),
+                        .addOptions(autocompleteString("trickname", "The name of the trick")),
                     Commands.slash("register", "Register a new trick")
                         .addOption(OptionType.STRING, "name", "Trick name", true)
                         .addOption(OptionType.STRING, "contents", "Trick contents", true),
                     Commands.slash("alias", "Add aliases to a trick")
-                        .addOption(OptionType.STRING, "command", "Existing trick name", true)
+                        .addOptions(autocompleteString("command", "Existing trick name"))
                         .addOption(OptionType.STRING, "aliases", "Space separated aliases", true),
                     Commands.slash("delete", "Delete a trick")
-                        .addOption(OptionType.STRING, "name", "Trick name", true),
+                        .addOptions(autocompleteString("name", "Trick name")),
                     Commands.slash("description", "Update a trick's description")
-                        .addOption(OptionType.STRING, "name", "Trick name", true)
+                        .addOptions(autocompleteString("name", "Trick name"))
                         .addOption(OptionType.STRING, "description", "New description", true),
                     Commands.slash("pastesite", "[Legacy] Set your preferred paste site for auto-reactions")
                         .addOption(OptionType.STRING, "site", "Paste site ID", true),
                     Commands.slash("find", "Find a trick")
-                        .addOption(OptionType.STRING, "target", "Search query", true)
+                        .addOptions(autocompleteString("target", "Search query"))
                         .addOption(OptionType.INTEGER, "page", "Page number", false),
                     Commands.message("Upload to mclogs"),
                     Commands.message("Upload to cdpaste"),
@@ -103,7 +106,10 @@ public final class Main {
                     Commands.message("Upload to capaste"),
                     Commands.message("Upload to gnomebot"),
                     Commands.message("Upload to mmd")
-                ).queue();
+                ).queue(
+                    success -> discordLogger.info("Application commands registered successfully"),
+                    error -> logger.error("Failed to register application commands", error)
+                );
             
             discordLogger.info("Discord bot started successfully");
             logger.info("ForgeBot initialization completed successfully");
@@ -114,5 +120,9 @@ public final class Main {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    private static OptionData autocompleteString(String name, String description) {
+        return new OptionData(OptionType.STRING, name, description, true, true);
     }
 }

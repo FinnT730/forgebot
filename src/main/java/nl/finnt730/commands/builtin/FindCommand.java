@@ -2,7 +2,6 @@ package nl.finnt730.commands.builtin;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import nl.finnt730.DatabaseManager;
 import nl.finnt730.commands.Command;
 import nl.finnt730.commands.CommandCache;
 
@@ -23,7 +22,13 @@ public final class FindCommand extends Command {
             }
         }
         var keys = CommandCache.getAllLoadedNames();
-        var result = keys.stream().filter((str) -> str.matches(split[0]) || str.contains(split[0])).sorted().toList();
+        var result = keys.stream().filter((str) -> {
+            try {
+                return str.matches(split[0]) || str.contains(split[0]);
+            } catch (Exception e) {
+                return str.contains(split[0]);
+            }
+        }).sorted().toList();
         int startIndex = pageNum * PAGE_SIZE;
         StringBuilder builder = new StringBuilder();
         builder.append("Found %d results, showing %d-%d\n".formatted(result.size(), startIndex, startIndex + PAGE_SIZE));

@@ -11,6 +11,7 @@ public abstract class ReservedCommand extends Command {
 
     @Override
     public final boolean canInvoke(Guild guild, Member invoker) {
-        return invoker.getRoles().stream().anyMatch((role) -> role.isHoisted() || Global.isManager(role) || invoker.isOwner());
+        return invoker != null && (invoker.isOwner()
+                || invoker.getRoles().stream().anyMatch(role -> role.isHoisted() || Global.isManager(role)));
     }
 }

@@ -1,6 +1,11 @@
 package nl.finnt730.commands;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -19,6 +24,8 @@ public class CommandCache {
     private static final Map<String, Command> cache = new HashMap<>();
     public static final String DEFAULT_PREFIX = "!";
     public static final String HOI4_ESP = "\u00BA";//In HOI4 they always use the key next to 1 no matter the layout.
+    private static final int DISCORD_CHOICE_MAX_LENGTH = 100;
+    private static final int DISCORD_AUTOCOMPLETE_MAX = 25;
     private static final DatabaseManager dbManager = DatabaseManager.getInstance();
 
     // Init builtin commands
@@ -93,7 +100,52 @@ public class CommandCache {
     }
 
     public static Set<String> getAllLoadedNames() {
-        return cache.keySet();
+        Set<String> names = new HashSet<>(cache.keySet());
+        names.addAll(dbManager.getAllCommandNames());
+        names.addAll(dbManager.getAllAliases());
+        return names;
+    }
+
+    /**
+     * Names and aliases stored in the database, ranked for Discord autocomplete (max 25).
+     */
+    public static List<String> suggestTrickNames(String query, int limit) {
+        int cap = Math.min(Math.max(limit, 0), DISCORD_AUTOCOMPLETE_MAX);
+        String q = query == null ? "" : query.toLowerCase(Locale.ROOT);
+        Set<String> all = new HashSet<>();
+        all.addAll(dbManager.getAllCommandNames());
+        all.addAll(dbManager.getAllAliases());
+
+        List<String> startsWith = new ArrayList<>();
+        List<String> contains = new ArrayList<>();
+        for (String name : all) {
+            if (name == null || name.isEmpty() || name.length() > DISCORD_CHOICE_MAX_LENGTH) {
+                continue;
+            }
+            String lower = name.toLowerCase(Locale.ROOT);
+            if (q.isEmpty() || lower.startsWith(q)) {
+                startsWith.add(name);
+            } else if (lower.contains(q)) {
+                contains.add(name);
+            }
+        }
+        Collections.sort(startsWith);
+        Collections.sort(contains);
+
+        List<String> result = new ArrayList<>(cap);
+        for (String name : startsWith) {
+            if (result.size() >= cap) {
+                break;
+            }
+            result.add(name);
+        }
+        for (String name : contains) {
+            if (result.size() >= cap) {
+                break;
+            }
+            result.add(name);
+        }
+        return result;
     }
 
     public static Optional<CommandContext> existsAsAlias(String aliasName) {
