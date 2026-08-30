@@ -11,13 +11,7 @@ import com.jsonstructure.DynamicJson;
 import haxe.root.JsonStructureLib;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.utils.MemberCachePolicy;
-import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import nl.finnt730.commands.CommandMigrator;
-import nl.finnt730.listeners.CommandListener;
-import nl.finnt730.listeners.DeleteListener;
-import nl.finnt730.listeners.GnomeBotDevListener;
-import nl.finnt730.listeners.PasteListener;
 import nl.finnt730.listeners.SelfDestructListener;
 import nl.finnt730.listeners.SlashCommandListener;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -66,15 +60,13 @@ public final class Main {
             logger.info("Environment configuration loaded successfully");
 
             discordLogger.info("Starting Discord bot...");
-            net.dv8tion.jda.api.JDA jda = JDABuilder.createLight(botToken, EnumSet.of(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGE_POLLS, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGE_REACTIONS))
-                    .addEventListeners(new CommandListener())
-                    .addEventListeners(new GnomeBotDevListener())
+            // Slash commands and interactions do not need privileged intents.
+            // GUILD_MESSAGES + GUILD_MESSAGE_REACTIONS are only used so bot replies can be trash-deleted.
+            net.dv8tion.jda.api.JDA jda = JDABuilder.createLight(botToken, EnumSet.of(
+                            GatewayIntent.GUILD_MESSAGES,
+                            GatewayIntent.GUILD_MESSAGE_REACTIONS))
                     .addEventListeners(new SelfDestructListener())
-                    .addEventListeners(new PasteListener())
-                    .addEventListeners(new DeleteListener())
                     .addEventListeners(new SlashCommandListener())
-                    .enableCache(CacheFlag.ROLE_TAGS)
-                    .setMemberCachePolicy(MemberCachePolicy.ALL) // Would do ONLINE but I don't think that will work if you aren't literally set to Online status.
                     .build();
 
             discordLogger.info("Waiting for Discord gateway...");
